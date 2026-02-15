@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine # 使用轻量级版本
+    container_name: bedrock-api-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_dev_password # 必须与 application-dev.yml 一致
+      POSTGRES_DB: bedrock_db         # 必须与 application-dev.yml 的 URL 一致
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data # 将数据持久化到本地目录
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

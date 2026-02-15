@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  # 本地 Docker 数据库
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bedrock_db
+    username: postgres
+    password: your_dev_password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # 自动同步表结构，开发利器
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # 开启监控，方便开发时查看状态
+  boot:
+    admin:
+      context-path: /admin
+      client:
+        url: http://localhost:8080/admin
+        instance:
+          name: Bedrock-Dev
+          service-url: http://localhost:8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" # 开发环境可以暴露所有监控端点

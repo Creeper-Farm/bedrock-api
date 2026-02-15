@@ -1,0 +1,31 @@
+server:
+  port: 80 # 或者 8080，通常由 Nginx 转发
+  shutdown: graceful # 开启优雅停机
+
+spring:
+  # 生产数据库连接（通常是公网 IP 或云数据库内网地址）
+  datasource:
+    url: jdbc:postgresql://prod-db-host:5432/bedrock_db_prod
+    username: prod_user
+    password: ${PROD_DB_PASSWORD} # 建议使用环境变量，不要明文写在文件里
+    hikari:
+      maximum-pool-size: 20 # 生产环境连接池设大一点
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # 生产环境严禁自动修改表结构，只校验一致性
+    show-sql: false # 关闭 SQL 打印，节省 IO 并保护数据安全
+
+  boot:
+    admin:
+      client:
+        enabled: false # 生产环境根据需求开启，建议通过专线监控
+
+# 生产环境只打印关键日志
+logging:
+  file:
+    name: /var/log/redhub/bedrock-system.log
+  level:
+    root: warn
+    com.creeperfarm: info # 生产环境业务日志降级为 info

@@ -1,0 +1,28 @@
+### JetBrains IDE (IntelliJ IDEA) ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+### Gradle Build Files ###
+.gradle/
+build/
+/*/build/
+bin/
+
+### Kotlin ###
+.kotlin/
+
+### Docker & Database Data ###
+# 重点：防止将数据库文件（包含你的 bedrock_db）提交到 Git
+/data/
+/logs/
+
+### System Files ###
+.DS_Store
+Thumbs.db
+
+### Local Environment Config ###
+# 如果未来有 application-local.yml 这种存放私密密钥的文件，建议也忽略
+# application-local.yml
