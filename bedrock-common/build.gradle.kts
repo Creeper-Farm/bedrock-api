@@ -39,6 +39,15 @@ dependencies {
 
     // 框架校验
     api("org.springframework.boot:spring-boot-starter-validation")
+
+    // Exposed 相关
+    api("org.jetbrains.exposed:exposed-core:1.0.0")
+    api("org.jetbrains.exposed:exposed-jdbc:1.0.0")
+    api("org.jetbrains.exposed:exposed-dao:1.0.0")
+    api("org.jetbrains.exposed:exposed-java-time:1.0.0")
+    api("org.jetbrains.exposed:exposed-spring-boot-starter:1.0.0")
+    api("org.jetbrains.exposed:exposed-migration-core:1.0.0")
+    api("org.jetbrains.exposed:exposed-migration-jdbc:1.0.0")
 }
 
 kotlin {

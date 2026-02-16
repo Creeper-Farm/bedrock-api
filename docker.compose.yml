@@ -1,18 +1,41 @@
+version: '3.8'
+
 services:
+  # PostgreSQL 数据库
   db:
-    image: postgres:16-alpine # 使用轻量级版本
+    image: postgres:16-alpine
     container_name: bedrock-api-postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_dev_password # 必须与 application-dev.yml 一致
-      POSTGRES_DB: bedrock_db         # 必须与 application-dev.yml 的 URL 一致
+      POSTGRES_PASSWORD: your_dev_password
+      POSTGRES_DB: bedrock_db
     ports:
       - "5432:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data # 将数据持久化到本地目录
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7.2-alpine
+    container_name: bedrock-api-redis
+    restart: always
+    command: redis-server --requirepass your_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    name: bedrock-network

@@ -9,13 +9,20 @@ spring:
     password: your_dev_password
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update # 自动同步表结构，开发利器
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+  # Redis 缓存
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: your_redis_password
+      database: 0 # 使用 0 号数据库
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8    # 连接池最大连接数
+          max-idle: 8      # 连接池中的最大空闲连接
+          min-idle: 0      # 连接池中的最小空闲连接
+          max-wait: 1000ms # 连接池最大阻塞等待时间
 
   # 开启监控，方便开发时查看状态
   boot:

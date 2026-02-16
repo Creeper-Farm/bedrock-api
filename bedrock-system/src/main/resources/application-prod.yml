@@ -12,11 +12,6 @@ spring:
       maximum-pool-size: 20 # 生产环境连接池设大一点
       minimum-idle: 5
 
-  jpa:
-    hibernate:
-      ddl-auto: validate # 生产环境严禁自动修改表结构，只校验一致性
-    show-sql: false # 关闭 SQL 打印，节省 IO 并保护数据安全
-
   boot:
     admin:
       client:
