@@ -18,7 +18,22 @@ spring:
 # 通用日志基础格式
 logging:
   pattern:
+    # 控制台日志格式：彩色显示
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+    # 文件日志格式：简洁明了
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${PID:- } --- [%t] %-40.40logger{39} : %m%n"
+
+  file:
+    # 日志文件的存放路径和名称
+    name: logs/bedrock-system.log
+
+  logback:
+    rollingpolicy:
+      # 日志保留策略
+      max-file-size: 10MB      # 单个文件超过 10MB 就自动切分
+      max-history: 7           # 只保留最近 7 天的日志
+      total-size-cap: 1GB      # 所有日志文件累计不超过 1GB
+
   level:
     root: info
-    com.creeperfarm: debug # 默认开启业务代码调试
+    com.eggetteluo.redhub: debug # 你的业务代码建议开启 debug，能看到更详细的 SQL 和 AOP 信息
