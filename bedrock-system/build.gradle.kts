@@ -22,6 +22,7 @@ repositories {
 dependencies {
     implementation(project(":bedrock-common"))
     implementation(project(":bedrock-user"))
+    implementation(project(":bedrock-auth"))
 
     // 基础核心
     implementation("org.springframework.boot:spring-boot-starter")

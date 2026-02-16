@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockcommon.exception
 
 import com.creeperfarm.bedrockcommon.model.Result
+import jakarta.security.auth.message.AuthException
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import javax.security.sasl.AuthenticationException
 
 /**
  * 全局异常处理器：拦截并统一处理所有 Web 层及业务层抛出的异常
@@ -111,5 +113,27 @@ class GlobalExceptionHandler {
     fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): Result<Unit> {
         log.error("Database integrity violation: ", e)
         return Result.error(409, "Data conflict or database constraint violation")
+    }
+
+    /**
+     * [401] 处理自定义认证异常 (如 JWT 过期、缺失、非法)
+     * 注释：拦截我们在拦截器中手动抛出的 AuthException
+     */
+    @ExceptionHandler(AuthException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun handleAuthException(e: AuthException): Result<Unit> {
+        log.warn("Authentication failed: ${e.message}")
+        return Result.error(401, e.message ?: "Unauthorized")
+    }
+
+    /**
+     * [401] 拦截 Spring Security 的内置异常 (可选)
+     * 注释：如果未来你使用了 Security 的原生注解，这个可以捕获对应的异常
+     */
+    @ExceptionHandler(AuthenticationException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun handleSpringSecurityAuthException(e: AuthenticationException): Result<Unit> {
+        log.warn("Security authentication failed: ${e.message}")
+        return Result.error(401, e.message ?: "Authentication Failed")
     }
 }
