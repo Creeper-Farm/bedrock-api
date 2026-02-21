@@ -2,7 +2,6 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.spring")
     id("io.spring.dependency-management") version "1.1.7"
-    kotlin("plugin.jpa") version "2.1.0"
 }
 
 group = "com.creeperfarm"

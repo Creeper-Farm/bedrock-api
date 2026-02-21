@@ -7,6 +7,7 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.springframework.stereotype.Repository
 
@@ -35,6 +36,13 @@ class UserRepository {
 
         // 返回 Long 类型的 ID 值
         return insertedId.value
+    }
+
+    fun getPassword(username: String): String? {
+        return UserTable.select(UserTable.password)
+            .where { (UserTable.username eq username) and (UserTable.deleted eq false) }
+            .map { it[UserTable.password] }
+            .singleOrNull()
     }
 
     /**
