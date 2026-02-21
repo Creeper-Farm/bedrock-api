@@ -7,6 +7,12 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
+auth:
+  jwt:
+    secret: ${JWT_SECRET:bedrock-dev-secret-change-me}
+    access-token-exp-seconds: 3600
+    refresh-token-exp-seconds: 604800
+
 # 通用日志基础格式
 logging:
   pattern:

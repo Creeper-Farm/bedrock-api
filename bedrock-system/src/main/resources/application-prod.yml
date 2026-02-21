@@ -17,6 +17,10 @@ spring:
       client:
         enabled: false # 生产环境根据需求开启，建议通过专线监控
 
+auth:
+  jwt:
+    secret: ${JWT_SECRET}
+
 # 生产环境只打印关键日志
 logging:
   file:

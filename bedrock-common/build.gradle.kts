@@ -36,6 +36,8 @@ dependencies {
 
     // 测试
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // 框架校验
     api("org.springframework.boot:spring-boot-starter-validation")

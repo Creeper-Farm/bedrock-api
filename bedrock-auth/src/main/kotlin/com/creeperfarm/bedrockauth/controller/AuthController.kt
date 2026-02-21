@@ -3,6 +3,8 @@ package com.creeperfarm.bedrockauth.controller
 import com.creeperfarm.bedrockauth.model.dto.TokenResponse
 import com.creeperfarm.bedrockauth.service.AuthService
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
+import jakarta.security.auth.message.AuthException
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 import com.creeperfarm.bedrockcommon.model.Result
@@ -31,5 +33,18 @@ class AuthController(private val authService: AuthService) {
     fun refresh(@RequestParam refreshToken: String): Result<TokenResponse> {
         log.info("REST request to refresh token")
         return Result.success(authService.refreshToken(refreshToken))
+    }
+
+    /**
+     * 注销接口
+     * 注释：删除当前用户在 Redis 中的 AccessToken 与 RefreshToken
+     */
+    @PostMapping("/logout")
+    fun logout(request: HttpServletRequest): Result<Unit> {
+        val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
+            ?: throw AuthException("Missing authenticated user")
+        log.info("REST request to logout userId: {}", userId)
+        authService.logout(userId)
+        return Result.success(null)
     }
 }

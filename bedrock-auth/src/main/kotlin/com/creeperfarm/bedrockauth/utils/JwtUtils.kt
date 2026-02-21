@@ -1,5 +1,6 @@
 package com.creeperfarm.bedrockauth.utils
 
+import com.creeperfarm.bedrockauth.config.AuthJwtProperties
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
@@ -7,14 +8,16 @@ import org.springframework.stereotype.Component
 import java.util.*
 
 @Component
-class JwtUtils {
-    // 注释：生产环境建议从配置文件读取
-    private val secret = "bedrock-secret-key-2026"
-    private val algorithm = Algorithm.HMAC256(secret)
+class JwtUtils(
+    private val jwtProperties: AuthJwtProperties
+) {
+    private val algorithm by lazy { Algorithm.HMAC256(jwtProperties.secret) }
 
     // 有效期定义
-    val accessTokenExp = 3600L       // 1小时
-    val refreshTokenExp = 86400L * 7 // 7天
+    val accessTokenExp: Long
+        get() = jwtProperties.accessTokenExpSeconds
+    val refreshTokenExp: Long
+        get() = jwtProperties.refreshTokenExpSeconds
 
     fun createAccessToken(userId: Long, username: String): String =
         generate(userId, username, accessTokenExp)
