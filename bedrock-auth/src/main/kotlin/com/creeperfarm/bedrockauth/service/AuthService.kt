@@ -2,8 +2,10 @@ package com.creeperfarm.bedrockauth.service
 
 import com.creeperfarm.bedrockauth.model.dto.TokenResponse
 import com.creeperfarm.bedrockauth.utils.JwtUtils
+import com.creeperfarm.bedrockdevice.service.UserDeviceService
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.repository.UserRepository
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit
 @Service
 class AuthService(
     private val userRepository: UserRepository,
+    private val userDeviceService: UserDeviceService,
     private val passwordEncoder: BCryptPasswordEncoder,
     private val jwtUtils: JwtUtils,
     private val redisTemplate: StringRedisTemplate
@@ -24,7 +27,7 @@ class AuthService(
      * 用户登录逻辑
      */
     @Transactional
-    fun login(req: UserRegister): TokenResponse {
+    fun login(req: UserRegister, request: HttpServletRequest): TokenResponse {
         log.info("User login attempt: {}", req.username)
 
         // 获取用户实体和加密后的密码
@@ -37,7 +40,13 @@ class AuthService(
             throw RuntimeException("Invalid credentials")
         }
 
+        // 登录成功后同步更新用户最后登录时间，并记录本次登录设备
         userRepository.updateLastLoginTime(user.id)
+        userDeviceService.recordLoginDevice(
+            userId = user.id,
+            request = request,
+            ipAddress = resolveClientIp(request)
+        )
 
         // 调用私有方法统一处理 Token 生成和 Redis 写入
         return generateAndStoreTokens(user.id, user.username)
@@ -111,5 +120,14 @@ class AuthService(
             listOf("auth:token:access:$userId", "auth:token:refresh:$userId")
         ) ?: 0L
         log.info("User logout completed, userId: {}, deleted token keys: {}", userId, deleted)
+    }
+
+    private fun resolveClientIp(request: HttpServletRequest): String? {
+        // 兼容反向代理场景：优先取 X-Forwarded-For / X-Real-IP
+        val xForwardedFor = request.getHeader("X-Forwarded-For")
+        if (!xForwardedFor.isNullOrBlank()) {
+            return xForwardedFor.split(",").firstOrNull()?.trim()
+        }
+        return request.getHeader("X-Real-IP")?.takeIf { it.isNotBlank() } ?: request.remoteAddr
     }
 }

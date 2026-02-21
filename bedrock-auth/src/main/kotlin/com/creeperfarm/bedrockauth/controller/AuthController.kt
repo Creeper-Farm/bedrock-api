@@ -21,9 +21,9 @@ class AuthController(private val authService: AuthService) {
      * 注释：验证通过后返回 AccessToken 和 RefreshToken
      */
     @PostMapping("/login")
-    fun login(@RequestBody req: UserRegister): Result<TokenResponse> {
+    fun login(@RequestBody req: UserRegister, request: HttpServletRequest): Result<TokenResponse> {
         log.info("REST request to login user: {}", req.username)
-        return Result.success(authService.login(req))
+        return Result.success(authService.login(req, request))
     }
 
     /**

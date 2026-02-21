@@ -96,6 +96,67 @@ docker compose -f docker.compose.yml up -d
 Authorization: Bearer <accessToken>
 ```
 
+## 设备信息采集（登录）
+
+系统支持在登录时记录用户设备信息。推荐客户端在 `POST /api/auth/login` 时附带以下请求头：
+
+- `X-Device-Id`：客户端稳定设备标识（建议首次安装生成并持久化）
+- `X-Device-Name`：可读设备名（如 `Xiaomi 13`、`iPhone 15 Pro`，可选）
+- `X-OS`：操作系统名称（如 `Android`、`iOS`、`HarmonyOS`，可选）
+- `X-App-Version`：客户端版本号（如 `1.3.2`，可选）
+
+### 浏览器
+
+浏览器通常会自动携带 `User-Agent`。即使不传上述自定义请求头，后端也会基于 `User-Agent` 自动识别并记录设备信息。
+
+### Android 示例（Kotlin）
+
+```kotlin
+val deviceId = getOrCreateDeviceId(context) // 首次生成并持久化
+val request = Request.Builder()
+    .url("https://your-api.com/api/auth/login")
+    .addHeader("X-Device-Id", deviceId)
+    .addHeader("X-Device-Name", "Xiaomi 13")
+    .addHeader("X-OS", "Android")
+    .addHeader("X-App-Version", BuildConfig.VERSION_NAME)
+    .post(jsonBody)
+    .build()
+```
+
+```kotlin
+fun getOrCreateDeviceId(context: Context): String {
+    val sp = context.getSharedPreferences("device", Context.MODE_PRIVATE)
+    val cached = sp.getString("device_id", null)
+    if (!cached.isNullOrBlank()) return cached
+    val id = UUID.randomUUID().toString()
+    sp.edit().putString("device_id", id).apply()
+    return id
+}
+```
+
+### iOS 示例（Swift）
+
+```swift
+func getOrCreateDeviceId() -> String {
+    let key = "device_id"
+    if let saved = UserDefaults.standard.string(forKey: key), !saved.isEmpty {
+        return saved
+    }
+    let newId = UUID().uuidString
+    UserDefaults.standard.set(newId, forKey: key)
+    return newId
+}
+
+var request = URLRequest(url: URL(string: "https://your-api.com/api/auth/login")!)
+request.httpMethod = "POST"
+request.setValue(getOrCreateDeviceId(), forHTTPHeaderField: "X-Device-Id")
+request.setValue(UIDevice.current.name, forHTTPHeaderField: "X-Device-Name")
+request.setValue("iOS", forHTTPHeaderField: "X-OS")
+request.setValue("1.0.0", forHTTPHeaderField: "X-App-Version")
+request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+request.httpBody = jsonData
+```
+
 ## 开发建议
 
 - 新增业务能力优先落在对应模块，避免把业务堆到 `bedrock-system`

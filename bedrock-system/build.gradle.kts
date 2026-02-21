@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":bedrock-common"))
     implementation(project(":bedrock-user"))
     implementation(project(":bedrock-auth"))
+    implementation(project(":bedrock-device"))
 
     // 基础核心
     implementation("org.springframework.boot:spring-boot-starter")
