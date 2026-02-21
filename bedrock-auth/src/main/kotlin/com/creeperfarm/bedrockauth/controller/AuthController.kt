@@ -1,5 +1,6 @@
 package com.creeperfarm.bedrockauth.controller
 
+import com.creeperfarm.bedrockauth.model.dto.TokenRefresh
 import com.creeperfarm.bedrockauth.model.dto.TokenResponse
 import com.creeperfarm.bedrockauth.service.AuthService
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
@@ -30,9 +31,9 @@ class AuthController(private val authService: AuthService) {
      * 注释：前端在 AccessToken 过期后，携带 refreshToken 请求此接口
      */
     @PostMapping("/refresh")
-    fun refresh(@RequestParam refreshToken: String): Result<TokenResponse> {
+    fun refresh(@RequestBody token: TokenRefresh): Result<TokenResponse> {
         log.info("REST request to refresh token")
-        return Result.success(authService.refreshToken(refreshToken))
+        return Result.success(authService.refreshToken(token.refreshToken))
     }
 
     /**

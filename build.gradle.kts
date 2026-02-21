@@ -38,3 +38,12 @@ kotlin {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// Some IDE import flows invoke :subproject:prepareKotlinBuildScriptModel.
+// Kotlin plugin only exposes this task on root in this build, so add a no-op
+// compatibility task for each subproject to avoid sync failures.
+subprojects {
+    if (tasks.findByName("prepareKotlinBuildScriptModel") == null) {
+        tasks.register("prepareKotlinBuildScriptModel")
+    }
+}
