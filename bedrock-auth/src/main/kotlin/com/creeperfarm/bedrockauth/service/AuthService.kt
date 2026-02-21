@@ -92,4 +92,15 @@ class AuthService(
 
         return TokenResponse(at, rt, jwtUtils.accessTokenExp, jwtUtils.refreshTokenExp)
     }
+
+    /**
+     * 注销登录态，删除 Redis 中保存的 token
+     */
+    @Transactional
+    fun logout(userId: Long) {
+        val deleted = redisTemplate.delete(
+            listOf("auth:token:access:$userId", "auth:token:refresh:$userId")
+        ) ?: 0L
+        log.info("User logout completed, userId: {}, deleted token keys: {}", userId, deleted)
+    }
 }

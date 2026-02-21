@@ -15,7 +15,7 @@ class WebMvcConfig(private val jwtInterceptor: JwtInterceptor) : WebMvcConfigure
                 // --- 白名单：不需要 Token 的接口 ---
                 "/api/auth/login",
                 "/api/auth/refresh",
-                "/api/users/register",
+                "/api/user/register",
 
                 // --- 静态资源与监控 ---
                 "/actuator/**",

@@ -7,13 +7,11 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
-  # 通用 Jackson 配置
-  jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
-    default-property-inclusion: non_null
-    serialization:
-      fail-on-empty-beans: false
+auth:
+  jwt:
+    secret: ${JWT_SECRET:bedrock-dev-secret-change-me}
+    access-token-exp-seconds: 3600
+    refresh-token-exp-seconds: 604800
 
 # 通用日志基础格式
 logging:
