@@ -37,6 +37,8 @@ class AuthService(
             throw RuntimeException("Invalid credentials")
         }
 
+        userRepository.updateLastLoginTime(user.id)
+
         // 调用私有方法统一处理 Token 生成和 Redis 写入
         return generateAndStoreTokens(user.id, user.username)
     }
@@ -54,6 +56,13 @@ class AuthService(
             val decodedJWT = jwtUtils.decodeToken(oldRefreshToken)
             val userId = decodedJWT.subject.toLong()
             val username = decodedJWT.getClaim("username").asString()
+
+            // 用户必须处于可用状态（未软删除）
+            val user = userRepository.findByUserId(userId)
+            if (user == null) {
+                redisTemplate.delete(listOf("auth:token:access:$userId", "auth:token:refresh:$userId"))
+                throw RuntimeException("Account not available")
+            }
 
             // 检查 Redis 中是否存在且匹配 (安全检查)
             val redisKey = "auth:token:refresh:$userId"
