@@ -1,8 +1,7 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.spring") // 移除版本号，跟随父项目
-    id("org.springframework.boot") // 移除版本号，跟随父项目
-    id("io.spring.dependency-management") // 移除版本号
+    kotlin("plugin.spring")
+    id("org.springframework.boot")
 }
 
 group = "com.creeperfarm"
