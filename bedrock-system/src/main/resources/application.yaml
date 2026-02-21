@@ -6,6 +6,11 @@ spring:
     active: dev
   main:
     allow-bean-definition-overriding: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
 
 auth:
   jwt:
@@ -34,4 +39,4 @@ logging:
 
   level:
     root: info
-    com.eggetteluo.redhub: debug # 你的业务代码建议开启 debug，能看到更详细的 SQL 和 AOP 信息
+    com.creeperfarm: debug # 你的业务代码建议开启 debug，能看到更详细的 SQL 和 AOP 信息

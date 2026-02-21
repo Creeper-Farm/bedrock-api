@@ -6,9 +6,11 @@ import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.transaction.annotation.Transactional
 
-@Configuration
+@Configuration("userDatabaseInitializer")
+@Order(10)
 class DatabaseInitializer : CommandLineRunner {
 
     // 定义 Logger

@@ -13,6 +13,7 @@ import org.springframework.web.bind.ServletRequestBindingException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.servlet.NoHandlerFoundException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import javax.security.sasl.AuthenticationException
 
@@ -83,6 +84,16 @@ class GlobalExceptionHandler {
     fun handleNoResourceFoundException(e: NoResourceFoundException): Result<Unit> {
         log.warn("Endpoint not found: {} {}", e.httpMethod, e.resourcePath)
         return Result.error(404, "Endpoint not found: ${e.resourcePath}")
+    }
+
+    /**
+     * [404] 处理动态路由未命中的接口异常
+     */
+    @ExceptionHandler(NoHandlerFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleNoHandlerFoundException(e: NoHandlerFoundException): Result<Unit> {
+        log.warn("Endpoint not found: {} {}", e.httpMethod, e.requestURL)
+        return Result.error(404, "Endpoint not found: ${e.requestURL}")
     }
 
     /**

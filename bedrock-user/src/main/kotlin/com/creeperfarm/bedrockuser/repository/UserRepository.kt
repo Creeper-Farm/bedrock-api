@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockuser.repository
 
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
+import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
 import com.creeperfarm.bedrockuser.model.entity.UserTable
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -9,13 +10,25 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository
 class UserRepository {
 
     /**
      * 查询用户 (DSL)
+     */
+    fun findByUserId(userId: Long): UserResponse? {
+        return UserTable.selectAll()
+            .where { (UserTable.id eq userId) and (UserTable.deleted eq false) }
+            .map { it.toUserResponse() }
+            .singleOrNull()
+    }
+
+    /**
+     * 查询用户
      */
     fun findByUsername(username: String): UserResponse? {
         return UserTable.selectAll()
@@ -43,6 +56,29 @@ class UserRepository {
             .where { (UserTable.username eq username) and (UserTable.deleted eq false) }
             .map { it[UserTable.password] }
             .singleOrNull()
+    }
+
+    fun updateLastLoginTime(userId: Long) {
+        UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
+            it[lastLoginTime] = LocalDateTime.now()
+        }
+    }
+
+    fun softDeleteUser(userId: Long): Int {
+        return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
+            it[deleted] = true
+            it[updateTime] = LocalDateTime.now()
+        }
+    }
+
+    fun updateUserProfile(userId: Long, req: UserProfileUpdate): Int {
+        return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
+            req.email?.let { email -> it[UserTable.email] = email }
+            req.phone?.let { phone -> it[UserTable.phone] = phone }
+            req.avatar?.let { avatar -> it[UserTable.avatar] = avatar }
+            req.bio?.let { bio -> it[UserTable.bio] = bio }
+            it[updateTime] = LocalDateTime.now()
+        }
     }
 
     /**

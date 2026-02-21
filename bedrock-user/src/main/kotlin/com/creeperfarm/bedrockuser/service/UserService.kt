@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockuser.service
 
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
+import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
 import com.creeperfarm.bedrockuser.repository.UserRepository
 import org.slf4j.LoggerFactory
@@ -43,11 +44,42 @@ class UserService(
      * 使用只读事务 (readOnly = true)，优化数据库性能
      */
     @Transactional(readOnly = true)
-    fun getUserProfile(username: String): UserResponse {
-        log.info("Fetching profile for username: {}", username)
-        return userRepository.findByUsername(username) ?: run {
-            log.warn("Profile fetch failed: User '{}' not found or deleted", username)
+    fun getUserProfile(userId: Long): UserResponse {
+        log.info("Fetching profile for userId: {}", userId)
+        return userRepository.findByUserId(userId) ?: run {
+            log.warn("Profile fetch failed: User '{}' not found or deleted", userId)
             throw RuntimeException("User not found")
         }
+    }
+
+    /**
+     * 注销账号（软删除）
+     */
+    @Transactional
+    fun deleteAccount(userId: Long) {
+        val affectedRows = userRepository.softDeleteUser(userId)
+        if (affectedRows == 0) {
+            log.warn("Delete account failed: User '{}' not found or already deleted", userId)
+            throw RuntimeException("User not found or already deleted")
+        }
+        log.info("User account soft deleted successfully, userId: {}", userId)
+    }
+
+    /**
+     * 更新当前用户资料
+     */
+    @Transactional
+    fun updateUserProfile(userId: Long, req: UserProfileUpdate): UserResponse {
+        if (req.email == null && req.phone == null && req.avatar == null && req.bio == null) {
+            throw IllegalArgumentException("At least one field must be provided")
+        }
+
+        val affectedRows = userRepository.updateUserProfile(userId, req)
+        if (affectedRows == 0) {
+            log.warn("Update profile failed: User '{}' not found or deleted", userId)
+            throw RuntimeException("User not found or already deleted")
+        }
+
+        return userRepository.findByUserId(userId) ?: throw RuntimeException("User not found")
     }
 }
