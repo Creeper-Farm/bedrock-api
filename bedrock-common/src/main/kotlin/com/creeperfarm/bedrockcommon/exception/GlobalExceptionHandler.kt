@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.NoHandlerFoundException
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import java.nio.file.AccessDeniedException
 import javax.security.sasl.AuthenticationException
 
 /**
@@ -156,7 +157,7 @@ class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun handleAccessDeniedException(e: Exception): Result<Unit> {
         log.warn("Access denied: ${e.message}")
-        return Result.error(403, "Access denied: Insufficient permissions")
+        return Result.error(403, "Forbidden: You do not have permission to access this resource")
     }
 
     /**

@@ -33,13 +33,13 @@ class AuthService(
         log.info("User login attempt: {}", req.username)
 
         // 获取用户实体和加密后的密码
-        val user = userRepository.findByUsername(req.username) ?: throw RuntimeException("User not found")
-        val encodedPassword = userRepository.getPassword(req.username) ?: throw RuntimeException("Internal error")
+        val user = userRepository.findByUsername(req.username) ?: throw IllegalArgumentException("Invalid username or password")
+        val encodedPassword = userRepository.getPassword(req.username) ?: throw IllegalArgumentException("Database integrity error: Password missing")
 
         // 校验密码是否正确
         if (!passwordEncoder.matches(req.password, encodedPassword)) {
             log.warn("Login failed: Password mismatch for user '{}'", req.username)
-            throw RuntimeException("Invalid credentials")
+            throw IllegalArgumentException("Invalid username or password")
         }
 
         // 登录成功后同步更新用户最后登录时间，并记录本次登录设备
