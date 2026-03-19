@@ -2,9 +2,10 @@ package com.creeperfarm.bedrockauth.service
 
 import com.creeperfarm.bedrockauth.model.dto.TokenResponse
 import com.creeperfarm.bedrockauth.utils.JwtUtils
-import com.creeperfarm.bedrockdevice.service.UserDeviceService
+import com.creeperfarm.bedrockuser.service.UserDeviceService
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.repository.UserRepository
+import com.creeperfarm.bedrockuser.service.PermissionService
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit
 class AuthService(
     private val userRepository: UserRepository,
     private val userDeviceService: UserDeviceService,
+    private val permissionService: PermissionService,
     private val passwordEncoder: BCryptPasswordEncoder,
     private val jwtUtils: JwtUtils,
     private val redisTemplate: StringRedisTemplate
@@ -48,8 +50,11 @@ class AuthService(
             ipAddress = resolveClientIp(request)
         )
 
+        // 查询用户拥有的所有权限代码 (如: ["user:add", "system:config"])
+        val permissions = permissionService.getUserPermissions(user.id).map { it.code }
+
         // 调用私有方法统一处理 Token 生成和 Redis 写入
-        return generateAndStoreTokens(user.id, user.username)
+        return generateAndStoreTokens(user.id, user.username, permissions)
     }
 
     /**
@@ -82,9 +87,12 @@ class AuthService(
                 throw RuntimeException("Refresh token is invalid or has expired")
             }
 
+            // 重新获取最新的权限信息，防止权限在中途被修改
+            val permissions = permissionService.getUserPermissions(userId).map { it.code }
+
             // 生成新的双 Token 并更新 Redis
             log.info("Refresh token validated for user: {}, issuing new tokens", username)
-            return generateAndStoreTokens(userId, username)
+            return generateAndStoreTokens(userId, username, permissions)
 
         } catch (e: Exception) {
             log.error("Token refresh failed: {}", e.message)
@@ -96,8 +104,10 @@ class AuthService(
      * 私有辅助方法：生成双 Token 并同步到 Redis
      * 注释：复用登录和刷新的核心逻辑
      */
-    private fun generateAndStoreTokens(userId: Long, username: String): TokenResponse {
-        val at = jwtUtils.createAccessToken(userId, username)
+    private fun generateAndStoreTokens(userId: Long, username: String, permissions: List<String>): TokenResponse {
+        // 在创建 AccessToken 时传入权限列表
+        val at = jwtUtils.createAccessToken(userId, username, permissions)
+        // RefreshToken 通常不需要携带权限信息，保持轻量
         val rt = jwtUtils.createRefreshToken(userId, username)
 
         // 存入 Redis，单位使用秒 (SECONDS)

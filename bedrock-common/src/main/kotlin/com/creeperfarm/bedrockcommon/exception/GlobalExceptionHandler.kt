@@ -1,6 +1,6 @@
 package com.creeperfarm.bedrockcommon.exception
 
-import com.creeperfarm.bedrockcommon.model.Result
+import com.creeperfarm.bedrockcommon.model.dto.Result
 import jakarta.security.auth.message.AuthException
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException

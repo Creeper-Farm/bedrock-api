@@ -1,4 +1,4 @@
-package com.creeperfarm.bedrockcommon.model
+package com.creeperfarm.bedrockcommon.model.dto
 
 import java.time.LocalDateTime
 

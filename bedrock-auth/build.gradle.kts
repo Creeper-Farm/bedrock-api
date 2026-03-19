@@ -21,7 +21,6 @@ repositories {
 dependencies {
     implementation(project(":bedrock-common"))
     implementation(project(":bedrock-user"))
-    implementation(project(":bedrock-device"))
 
     // 1. 解决 StringRedisTemplate 报错
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

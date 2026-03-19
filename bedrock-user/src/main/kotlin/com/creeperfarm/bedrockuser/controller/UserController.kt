@@ -1,10 +1,11 @@
 package com.creeperfarm.bedrockuser.controller
 
+import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
 import com.creeperfarm.bedrockuser.service.UserService
-import com.creeperfarm.bedrockcommon.model.Result
+import com.creeperfarm.bedrockcommon.model.dto.Result
 import jakarta.security.auth.message.AuthException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
@@ -32,6 +33,7 @@ class UserController(private val userService: UserService) {
      * 获取用户信息接口
      * 注释：根据用户名获取活跃（未删除）的用户资料
      */
+    @Authenticated
     @GetMapping("/{userId:\\d+}")
     fun getProfile(@PathVariable userId: Long): Result<UserResponse> {
         log.info("REST request to get user profile: {}", userId)
@@ -42,6 +44,7 @@ class UserController(private val userService: UserService) {
     /**
      * 注销账号（软删除）接口
      */
+    @Authenticated
     @DeleteMapping("/account")
     fun deleteAccount(request: HttpServletRequest): Result<Unit> {
         val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
@@ -54,6 +57,7 @@ class UserController(private val userService: UserService) {
     /**
      * 更新当前用户资料接口
      */
+    @Authenticated
     @PutMapping("/profile")
     fun updateProfile(
         request: HttpServletRequest,

@@ -1,7 +1,7 @@
-package com.creeperfarm.bedrockdevice.repository
+package com.creeperfarm.bedrockuser.repository
 
-import com.creeperfarm.bedrockdevice.model.dto.DeviceLoginRecord
-import com.creeperfarm.bedrockdevice.model.entity.UserDeviceTable
+import com.creeperfarm.bedrockuser.model.dto.DeviceLoginRecord
+import com.creeperfarm.bedrockuser.model.entity.UserDeviceTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -67,7 +67,7 @@ class UserDeviceRepository {
     }
 
     private fun ResultRow.toDeviceLoginRecord() = DeviceLoginRecord(
-        userId = this[UserDeviceTable.userId],
+        userId = this[UserDeviceTable.userId].value,
         deviceId = this[UserDeviceTable.deviceId],
         loginCount = this[UserDeviceTable.loginCount]
     )

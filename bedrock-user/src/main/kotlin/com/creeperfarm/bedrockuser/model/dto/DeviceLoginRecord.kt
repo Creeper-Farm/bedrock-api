@@ -1,4 +1,4 @@
-package com.creeperfarm.bedrockdevice.model.dto
+package com.creeperfarm.bedrockuser.model.dto
 
 data class DeviceLoginRecord(
     val userId: Long,

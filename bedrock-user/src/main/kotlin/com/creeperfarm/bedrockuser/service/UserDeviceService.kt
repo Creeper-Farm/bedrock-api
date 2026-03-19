@@ -1,6 +1,6 @@
-package com.creeperfarm.bedrockdevice.service
+package com.creeperfarm.bedrockuser.service
 
-import com.creeperfarm.bedrockdevice.repository.UserDeviceRepository
+import com.creeperfarm.bedrockuser.repository.UserDeviceRepository
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service

@@ -9,17 +9,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 class WebMvcConfig(private val jwtInterceptor: JwtInterceptor) : WebMvcConfigurer {
 
     override fun addInterceptors(registry: InterceptorRegistry) {
+        // 拦截所有 API 路径，内部逻辑会根据注解判断是否真的需要 Token
         registry.addInterceptor(jwtInterceptor)
             .addPathPatterns("/api/**") // 拦截所有以 /api 开头的请求
-            .excludePathPatterns(
-                // --- 白名单：不需要 Token 的接口 ---
-                "/api/auth/login",
-                "/api/auth/refresh",
-                "/api/user/register",
-
-                // --- 静态资源与监控 ---
-                "/actuator/**",
-                "/error"
-            )
     }
 }
