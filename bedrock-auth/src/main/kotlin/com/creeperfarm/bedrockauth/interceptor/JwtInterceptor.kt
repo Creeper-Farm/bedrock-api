@@ -6,6 +6,7 @@ import com.creeperfarm.bedrockuser.repository.UserRepository
 import jakarta.security.auth.message.AuthException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.stereotype.Component
@@ -66,7 +67,9 @@ class JwtInterceptor(
             }
 
             // 校验用户可用性
-            val user = userRepository.findByUserId(userIdLong)
+            val user = transaction {
+                userRepository.findByUserId(userIdLong)
+            }
             if (user == null) {
                 redisTemplate.delete(listOf("auth:token:access:$userId", "auth:token:refresh:$userId"))
                 log.warn("Access denied: User account {} no longer exists", userId)

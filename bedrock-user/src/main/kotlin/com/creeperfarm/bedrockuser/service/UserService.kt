@@ -82,4 +82,18 @@ class UserService(
 
         return userRepository.findByUserId(userId) ?: throw RuntimeException("User not found")
     }
+
+    /**
+     * 分页获取用户列表
+     */
+    @Transactional(readOnly = true)
+    fun getUserList(page: Int, size: Int, username: String?): List<UserResponse> {
+        log.info("Fetching user list with pagination - Page: {}, Size: {}", page, size)
+
+        // 计算偏移量
+        val offset = ((page - 1) * size).toLong()
+
+        // 从 repository 获取数据
+        return userRepository.findAllActiveUsers(offset, size, username)
+    }
 }

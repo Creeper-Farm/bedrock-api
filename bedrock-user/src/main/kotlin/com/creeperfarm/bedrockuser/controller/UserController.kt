@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockuser.controller
 
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
+import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
@@ -67,5 +68,22 @@ class UserController(private val userService: UserService) {
             ?: throw AuthException("Missing authenticated user")
         log.info("REST request to update profile, userId: {}", userId)
         return Result.success(userService.updateUserProfile(userId, req))
+    }
+
+    /**
+     * 获取所有用户列表接口（分页/搜索）
+     * 注释：需要管理员权限 system:user:list
+     */
+    @Authenticated
+    @RequiresPermissions(["system:user:list"])
+    @GetMapping("/list")
+    fun listUsers(
+        @RequestParam(defaultValue = "1") page: Int,
+        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(required = false) username: String?
+    ): Result<List<UserResponse>> {
+        log.info("REST request to get user list. Page: {}, Size: {}, Search: {}", page, size, username)
+        val users = userService.getUserList(page, size, username)
+        return Result.success(users)
     }
 }

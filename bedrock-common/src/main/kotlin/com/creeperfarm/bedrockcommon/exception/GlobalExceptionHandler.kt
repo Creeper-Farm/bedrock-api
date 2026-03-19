@@ -147,4 +147,31 @@ class GlobalExceptionHandler {
         log.warn("Security authentication failed: ${e.message}")
         return Result.error(401, e.message ?: "Authentication Failed")
     }
+
+    /**
+     * [403] 处理权限不足异常
+     * 注释：当用户已登录但缺少接口要求的权限字符时触发
+     */
+    @ExceptionHandler(AccessDeniedException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun handleAccessDeniedException(e: Exception): Result<Unit> {
+        log.warn("Access denied: ${e.message}")
+        return Result.error(403, "Access denied: Insufficient permissions")
+    }
+
+    /**
+     * [403] 处理自定义业务权限异常
+     * 注释：如果在 PermissionInterceptor 或 Service 中手动抛出了包含特定关键字的 RuntimeException，在此统一捕获
+     */
+    @ExceptionHandler(IllegalStateException::class, RuntimeException::class)
+    fun handleBusinessForbiddenException(e: Exception): Result<Unit> {
+        val message = e.message
+        if (message?.contains("Forbidden", ignoreCase = true) == true ||
+            message?.contains("Access denied", ignoreCase = true) == true
+        ) {
+            log.warn("Business permission check failed: $message")
+            return Result.error(403, "Forbidden: You do not have permission to access this resource")
+        }
+        throw e
+    }
 }

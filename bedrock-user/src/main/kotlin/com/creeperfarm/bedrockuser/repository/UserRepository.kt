@@ -1,12 +1,14 @@
 package com.creeperfarm.bedrockuser.repository
 
-import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
+import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
 import com.creeperfarm.bedrockuser.model.entity.UserTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -28,7 +30,7 @@ class UserRepository {
     }
 
     /**
-     * 查询用户
+     * 根据用户名查询
      */
     fun findByUsername(username: String): UserResponse? {
         return UserTable.selectAll()
@@ -38,32 +40,42 @@ class UserRepository {
     }
 
     /**
-     * 创建用户 (DSL)
-     * 使用 insertAndGetId 直接插入并获取生成的 ID
+     * 创建用户
      */
     fun createUser(req: UserRegister, encodedPassword: String): Long {
         val insertedId = UserTable.insertAndGetId {
             it[username] = req.username
             it[password] = encodedPassword
+            // 显式设置初始时间
+            it[createTime] = LocalDateTime.now()
+            it[updateTime] = LocalDateTime.now()
         }
-
-        // 返回 Long 类型的 ID 值
         return insertedId.value
     }
 
+    /**
+     * 获取密码用于登录校验
+     */
     fun getPassword(username: String): String? {
+        // 仅查询密码列，优化性能
         return UserTable.select(UserTable.password)
             .where { (UserTable.username eq username) and (UserTable.deleted eq false) }
             .map { it[UserTable.password] }
             .singleOrNull()
     }
 
+    /**
+     * 更新最后登录时间
+     */
     fun updateLastLoginTime(userId: Long) {
         UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
             it[lastLoginTime] = LocalDateTime.now()
         }
     }
 
+    /**
+     * 软删除用户
+     */
     fun softDeleteUser(userId: Long): Int {
         return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
             it[deleted] = true
@@ -71,6 +83,9 @@ class UserRepository {
         }
     }
 
+    /**
+     * 更新用户资料
+     */
     fun updateUserProfile(userId: Long, req: UserProfileUpdate): Int {
         return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
             req.email?.let { email -> it[UserTable.email] = email }
@@ -82,7 +97,24 @@ class UserRepository {
     }
 
     /**
-     * 注释：将数据库结果行映射为 DTO 的扩展函数
+     * 分页查询活跃用户
+     */
+    fun findAllActiveUsers(offset: Long, limit: Int, username: String?): List<UserResponse> {
+        val query = UserTable.selectAll().where { UserTable.deleted eq false }
+
+        // 动态添加用户名搜索条件
+        if (!username.isNullOrBlank()) {
+            query.andWhere { UserTable.username like "%$username%" }
+        }
+
+        return query.limit(limit)
+            .offset(offset)
+            .map { it.toUserResponse() }
+    }
+
+    /**
+     * 将 ResultRow 映射为 UserResponse DTO
+     * 建议设为私有，仅供内部使用
      */
     private fun ResultRow.toUserResponse() = UserResponse(
         id = this[UserTable.id].value,
