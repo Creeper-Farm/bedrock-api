@@ -3,6 +3,7 @@ package com.creeperfarm.bedrockuser.repository
 import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
 import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
+import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
@@ -108,6 +109,18 @@ class UserRepository {
         }
 
         return query.limit(limit)
+            .offset(offset)
+            .map { it.toUserResponse() }
+    }
+
+    /**
+     * 根据角色 ID 查询该角色下的所有用户
+     */
+    fun findUsersByRoleId(offset: Long, limit: Int, roleId: Long): List<UserResponse> {
+        return (UserTable innerJoin UserRoleTable)
+            .selectAll()
+            .where { (UserRoleTable.roleId eq roleId) and (UserTable.deleted eq false) }
+            .limit(limit)
             .offset(offset)
             .map { it.toUserResponse() }
     }

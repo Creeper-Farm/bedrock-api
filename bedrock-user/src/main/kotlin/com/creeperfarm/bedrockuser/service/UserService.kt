@@ -96,4 +96,15 @@ class UserService(
         // 从 repository 获取数据
         return userRepository.findAllActiveUsers(offset, size, username)
     }
+
+    /**
+     * 分页获取属于某个角色的用户列表
+     */
+    @Transactional(readOnly = true)
+    fun getUserListByRoleId(page: Int, size: Int, roleId: Long): List<UserResponse> {
+        log.info("Fetching user list by roleId with pagination - Page: {}, Size: {}", page, size)
+        val offset = ((page - 1) * size).toLong()
+        return userRepository.findUsersByRoleId(offset, size, roleId)
+    }
+
 }
