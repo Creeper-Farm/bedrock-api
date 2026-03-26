@@ -21,4 +21,32 @@ class PermissionService(
         logger.info("Getting user permissions for user {}", userId)
         return permissionRepository.findByUserId(userId)
     }
+
+    /**
+     * 分页查询权限列表
+     */
+    @Transactional(readOnly = true)
+    fun getPermissions(page: Int, size: Int, name: String?): List<PermissionResponse> {
+        logger.info("Getting permission list with pagination - Page: $page, Size: $size, Username: $name")
+        val offset = ((page - 1) * size).toLong()
+        return permissionRepository.findPermissionsPaged(offset, size, name)
+    }
+
+    /**
+     * 获取查询权限总量
+     */
+    @Transactional(readOnly = true)
+    fun getSearchPermissionTotal(name: String?): Long {
+        logger.info("Getting search permission total - Search: $name")
+        return permissionRepository.countActivePermissions(name)
+    }
+
+    /**
+     * 创建权限
+     */
+    @Transactional
+    fun createPermission(name: String, code: String): Long {
+        logger.info("Creating new permission - Permission code: $code")
+        return permissionRepository.createPermission(name, code)
+    }
 }

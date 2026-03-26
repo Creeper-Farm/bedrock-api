@@ -6,25 +6,88 @@ import com.creeperfarm.bedrockuser.model.entity.RolePermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
 import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.jdbc.andWhere
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.jdbc.*
 import org.springframework.stereotype.Repository
 
 @Repository
 class PermissionRepository {
 
     /**
-     * 查询用户权限
+     * 查询用户权限 (去重)
      */
     fun findByUserId(userId: Long): List<PermissionResponse> {
         return (UserRoleTable innerJoin RoleTable
                 innerJoin RolePermissionTable
-                innerJoin PermissionTable).selectAll()
+                innerJoin PermissionTable)
+            .selectAll()
             .where { UserRoleTable.userId eq userId }
             .andWhere { PermissionTable.deleted eq false }
             .andWhere { RoleTable.deleted eq false }
             .map { it.toPermissionResponse() }
+            .distinctBy { it.code }
+    }
+
+    /**
+     * 分页查询权限
+     */
+    fun findPermissionsPaged(offset: Long, limit: Int, name: String?): List<PermissionResponse> {
+        val query = PermissionTable.selectAll().where { PermissionTable.deleted eq false }
+
+        if (!name.isNullOrBlank()) {
+            query.andWhere { PermissionTable.name like "%$name%" }
+        }
+
+        return query.orderBy(PermissionTable.createTime to SortOrder.DESC)
+            .limit(limit)
+            .offset(offset)
+            .map { it.toPermissionResponse() }
+    }
+
+    /**
+     * 查询权限总数
+     */
+    fun countActivePermissions(name: String?): Long {
+        val query = PermissionTable.selectAll().where { PermissionTable.deleted eq false }
+        if (!name.isNullOrBlank()) {
+            query.andWhere { PermissionTable.name like "%$name%" }
+        }
+        return query.count()
+    }
+
+    /**
+     * 根据角色 ID 查询拥有的权限 ID 列表
+     * 注释：用于编辑角色时，在前端勾选已有的权限
+     */
+    fun findIdsByRoleId(roleId: Long): List<Long> {
+        return RolePermissionTable.selectAll()
+            .where { RolePermissionTable.roleId eq roleId }
+            .map { it[RolePermissionTable.permissionId].value }
+    }
+
+    /**
+     * 创建权限
+     */
+    fun createPermission(name: String, code: String): Long {
+        val insertId = PermissionTable.insertAndGetId {
+            it[PermissionTable.name] = name
+            it[PermissionTable.code] = code
+        }
+        return insertId.value
+    }
+
+    /**
+     * 软删除权限并清理关联关系
+     */
+    fun deletePermission(permissionId: Long) {
+        // 1. 清理角色-权限关联表
+        RolePermissionTable.deleteWhere { RolePermissionTable.permissionId eq permissionId }
+        // 2. 逻辑删除权限表记录
+        PermissionTable.update({ PermissionTable.id eq permissionId }) {
+            it[PermissionTable.deleted] = true
+        }
     }
 
     /**
@@ -37,5 +100,4 @@ class PermissionRepository {
         createTime = this[PermissionTable.createTime],
         updateTime = this[PermissionTable.updateTime]
     )
-
 }
