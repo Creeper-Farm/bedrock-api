@@ -5,6 +5,7 @@ import com.creeperfarm.bedrockuser.model.entity.PermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RolePermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
+import com.creeperfarm.bedrockuser.model.enums.PermissionType
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
@@ -70,10 +71,11 @@ class PermissionRepository {
     /**
      * 创建权限
      */
-    fun createPermission(name: String, code: String): Long {
+    fun createPermission(name: String, code: String, type: PermissionType): Long {
         val insertId = PermissionTable.insertAndGetId {
             it[PermissionTable.name] = name
             it[PermissionTable.code] = code
+            it[PermissionTable.type] = type
         }
         return insertId.value
     }

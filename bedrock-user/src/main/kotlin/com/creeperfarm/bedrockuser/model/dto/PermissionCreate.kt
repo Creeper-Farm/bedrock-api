@@ -1,5 +1,6 @@
 package com.creeperfarm.bedrockuser.model.dto
 
+import com.creeperfarm.bedrockuser.model.enums.PermissionType
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
@@ -13,5 +14,7 @@ data class PermissionCreate(
 
     @field:NotBlank(message = "Code cannot be blank")
     @field:Size(min = 8, max = 20, message = "Code must be between 8 and 20 characters")
-    val code: String
+    val code: String,
+
+    val type: PermissionType
 )

@@ -52,7 +52,7 @@ class PermissionController(
     fun createPermission(
         @RequestBody @Valid request: PermissionCreate
     ): Result<Long> {
-        val permissionId = permissionService.createPermission(request.name, request.code)
+        val permissionId = permissionService.createPermission(request.name, request.code, request.type)
         return Result.success(permissionId)
     }
 

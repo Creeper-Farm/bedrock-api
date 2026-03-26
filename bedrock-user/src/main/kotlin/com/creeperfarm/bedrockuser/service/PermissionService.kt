@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockuser.service
 
 import com.creeperfarm.bedrockuser.model.dto.PermissionResponse
+import com.creeperfarm.bedrockuser.model.enums.PermissionType
 import com.creeperfarm.bedrockuser.repository.PermissionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -45,8 +46,8 @@ class PermissionService(
      * 创建权限
      */
     @Transactional
-    fun createPermission(name: String, code: String): Long {
-        logger.info("Creating new permission - Permission code: $code")
-        return permissionRepository.createPermission(name, code)
+    fun createPermission(name: String, code: String, type: PermissionType): Long {
+        logger.info("Creating new permission - Permission code: $code, type: $type")
+        return permissionRepository.createPermission(name, code, type)
     }
 }
