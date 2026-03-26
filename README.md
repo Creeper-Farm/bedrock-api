@@ -87,14 +87,45 @@ docker compose -f docker.compose.yml up -d
 
 - `POST /api/user/register` 注册
 - `GET /api/user/{userId}` 查询用户信息
+- `GET /api/user/list` 分页查询用户列表（需登录 + `system:user:list`）
 - `PUT /api/user/profile` 更新当前用户资料（需登录）
 - `DELETE /api/user/account` 软删除当前账号（需登录）
+
+### 角色
+
+- `GET /api/role/list` 分页查询角色列表（需登录 + `system:role:list`）
+- `GET /api/role/user/{userId}` 查询指定用户的角色列表（需登录 + `system:role:list`）
+- `GET /api/role/{roleId}/users` 查询指定角色下的用户列表（需登录 + `system:user:list`）
+- `PUT /api/role/user/{userId}` 重新绑定用户角色（需登录 + `system:user:role`）
+
+### 权限
+
+- `GET /api/permissions/list` 分页查询权限列表（需登录 + `system:permission:list`）
+- `POST /api/permissions/create` 创建权限（需登录 + `system:permission:create`）
 
 鉴权接口需携带：
 
 ```http
 Authorization: Bearer <accessToken>
 ```
+
+### 创建权限示例
+
+`POST /api/permissions/create`
+
+```json
+{
+  "name": "User List",
+  "code": "system:user:list",
+  "type": "INTERFACE"
+}
+```
+
+`type` 可选值：
+
+- `MENU`
+- `BUTTON`
+- `INTERFACE`
 
 ## 设备信息采集（登录）
 
