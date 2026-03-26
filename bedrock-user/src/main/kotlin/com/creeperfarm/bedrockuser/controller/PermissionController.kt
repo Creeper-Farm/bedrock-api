@@ -6,11 +6,13 @@ import com.creeperfarm.bedrockcommon.model.dto.PageResult
 import com.creeperfarm.bedrockcommon.model.dto.Result
 import com.creeperfarm.bedrockuser.model.dto.PermissionCreate
 import com.creeperfarm.bedrockuser.model.dto.PermissionResponse
+import com.creeperfarm.bedrockuser.model.dto.PermissionUpdate
 import com.creeperfarm.bedrockuser.service.PermissionService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -54,6 +56,20 @@ class PermissionController(
     ): Result<Long> {
         val permissionId = permissionService.createPermission(request.name, request.code, request.type)
         return Result.success(permissionId)
+    }
+
+    /**
+     * 更新权限
+     * 注释: 需要管理员权限 system:permission:update
+     */
+    @Authenticated
+    @RequiresPermissions(["system:permission:update"])
+    @PutMapping("/update")
+    fun updatePermission(
+        @RequestBody @Valid request: PermissionUpdate
+    ): Result<Boolean> {
+        val isUpdate = permissionService.updatePermission(request.id, request.name, request.code, request.type)
+        return Result.success(isUpdate)
     }
 
 }

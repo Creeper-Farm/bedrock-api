@@ -50,4 +50,13 @@ class PermissionService(
         logger.info("Creating new permission - Permission code: $code, type: $type")
         return permissionRepository.createPermission(name, code, type)
     }
+
+    /**
+     * 更新权限
+     */
+    @Transactional
+    fun updatePermission(permissionId: Long, name: String, code: String, type: PermissionType): Boolean {
+        logger.info("Updating permission - Permission code: $code, type: $type")
+        return permissionRepository.updatePermission(permissionId, name, code, type)
+    }
 }

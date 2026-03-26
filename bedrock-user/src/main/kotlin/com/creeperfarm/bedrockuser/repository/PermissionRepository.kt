@@ -81,6 +81,18 @@ class PermissionRepository {
     }
 
     /**
+     * 更新权限
+     */
+    fun updatePermission(permissionId: Long, name: String, code: String, type: PermissionType): Boolean {
+        val affectedRows = PermissionTable.update({ PermissionTable.id eq permissionId }) {
+            it[PermissionTable.name] = name
+            it[PermissionTable.code] = code
+            it[PermissionTable.type] = type
+        }
+        return affectedRows == 1
+    }
+
+    /**
      * 软删除权限并清理关联关系
      */
     fun deletePermission(permissionId: Long) {
