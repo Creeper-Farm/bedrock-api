@@ -1,5 +1,6 @@
 server:
   port: 8080
+  address: 0.0.0.0  # 允许所有 IP 访问，而不仅仅是 localhost
 
 spring:
   # 本地 Docker 数据库

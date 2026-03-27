@@ -43,6 +43,19 @@ class UserController(private val userService: UserService) {
     }
 
     /**
+     * 获取用户个人信息接口
+     */
+    @Authenticated
+    @GetMapping("/profile")
+    fun getSelfProfile(request: HttpServletRequest): Result<UserResponse> {
+        val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
+            ?: throw AuthException("Missing authenticated user")
+        log.info("REST request to get user profile: $userId")
+        val profile = userService.getUserProfile(userId)
+        return Result.success(profile)
+    }
+
+    /**
      * 注销账号（软删除）接口
      */
     @Authenticated
