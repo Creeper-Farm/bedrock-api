@@ -23,7 +23,6 @@ class UserDeviceService(
 
     @Transactional
     fun recordLoginDevice(userId: Long, request: HttpServletRequest, ipAddress: String?) {
-        // 标准化请求端特征并生成设备标识
         val userAgent = request.getHeader("User-Agent")
         val normalizedUa = userAgent?.ifBlank { null } ?: "unknown"
         val os = request.getHeader(HEADER_OS)?.takeIf { it.isNotBlank() } ?: parseOs(normalizedUa)
@@ -40,7 +39,6 @@ class UserDeviceService(
 
         val existing = userDeviceRepository.findByUserIdAndDeviceId(userId, deviceId)
         if (existing == null) {
-            // 首次设备登录：创建新记录
             userDeviceRepository.createLoginRecord(
                 userId = userId,
                 deviceId = deviceId,
@@ -55,7 +53,6 @@ class UserDeviceService(
             return
         }
 
-        // 已知设备再次登录：递增登录次数并刷新最后登录信息
         userDeviceRepository.updateLoginRecord(
             userId = userId,
             deviceId = deviceId,
@@ -100,15 +97,13 @@ class UserDeviceService(
     ): String {
         val customId = providedDeviceId?.trim()?.takeIf { it.isNotBlank() }
         if (customId != null) {
-            // 客户端可显式上报稳定 deviceId，后端统一做摘要存储
             return buildDeviceId(customId, os, "custom")
         }
-        // 浏览器或未上报 deviceId 的场景，回退到 UA 特征指纹
         return buildDeviceId(userAgent, os, "ua")
     }
 
     private fun buildDeviceId(identifierSource: String, os: String, fingerprintType: String): String {
-        // 设备指纹：不暴露原始标识，使用 SHA-256 存储固定长度摘要
+        // 仅存储摘要，避免直接落原始设备标识。
         val input = "$identifierSource|$os|$fingerprintType"
         val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray())
         return digest.joinToString("") { "%02x".format(it) }

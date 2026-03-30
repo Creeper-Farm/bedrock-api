@@ -14,7 +14,6 @@ import java.time.LocalDateTime
 @Repository
 class UserDeviceRepository {
 
-    // 判断该用户-设备是否已有登录记录
     fun findByUserIdAndDeviceId(userId: Long, deviceId: String): UserDeviceLoginRecord? {
         return UserDeviceTable.selectAll()
             .where { activeDeviceCondition(userId, deviceId) }
@@ -32,7 +31,6 @@ class UserDeviceRepository {
         userAgent: String?,
         now: LocalDateTime
     ) {
-        // 首次登录该设备：写入 first/last 登录时间并初始化计数
         UserDeviceTable.insertAndGetId {
             it[UserDeviceTable.userId] = userId
             it[UserDeviceTable.deviceId] = deviceId
@@ -56,7 +54,6 @@ class UserDeviceRepository {
         ipAddress: String?,
         now: LocalDateTime
     ) {
-        // 非首次登录该设备：按约定仅更新计数、登录时间、版本和 IP
         UserDeviceTable.update({ activeDeviceCondition(userId, deviceId) }) {
             it[UserDeviceTable.lastLoginTime] = now
             it[UserDeviceTable.loginCount] = loginCount

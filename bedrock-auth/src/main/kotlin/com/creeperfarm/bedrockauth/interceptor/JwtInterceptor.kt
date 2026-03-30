@@ -23,21 +23,17 @@ class JwtInterceptor(
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
-        // 1. 如果请求不是指向具体的 Controller 方法（比如静态资源、404等），直接放行
         if (handler !is HandlerMethod) {
             return true
         }
 
-        // 2. 检查方法上或所属的类上是否存在 @Authenticated 注解
         val hasAnnotation = handler.hasMethodAnnotation(Authenticated::class.java) ||
                 handler.beanType.isAnnotationPresent(Authenticated::class.java)
 
-        // 3. 如果没有该注解，说明是公开接口，直接放行
         if (!hasAnnotation) {
             return true
         }
 
-        // --- 4. 以下为受保护接口的校验逻辑 ---
         val authHeader = request.getHeader("Authorization")
 
         if (authHeader.isNullOrBlank() || !authHeader.startsWith("Bearer ")) {
@@ -52,7 +48,6 @@ class JwtInterceptor(
             val userId = decodedJWT.subject
             val userIdLong = userId.toLongOrNull() ?: throw AuthException("Invalid token subject")
 
-            // 校验 Redis 状态
             val redisKey = "auth:token:access:$userId"
             val savedToken = redisTemplate.opsForValue().get(redisKey)
 
@@ -66,7 +61,6 @@ class JwtInterceptor(
                 throw AuthException("Token is no longer valid")
             }
 
-            // 校验用户可用性
             val user = transaction {
                 userRepository.findByUserId(userIdLong)
             }
@@ -76,11 +70,10 @@ class JwtInterceptor(
                 throw AuthException("Account not available")
             }
 
-            // 解析权限列表并存入 Request 域
             val permissions = decodedJWT.getClaim("permissions").asList(String::class.java) ?: emptyList()
 
             request.setAttribute("userId", userId)
-            request.setAttribute("userPermissions", permissions) // 存入权限以便后续校验
+            request.setAttribute("userPermissions", permissions)
 
             return true
         } catch (e: Exception) {

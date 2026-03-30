@@ -20,9 +20,7 @@ import org.springframework.stereotype.Repository
 @Repository
 class RoleRepository {
 
-    /**
-     * 查询用户角色列表
-     */
+    /** 查询用户角色列表。 */
     fun findRolesByUserId(userId: Long): List<RoleResponse> {
         return (UserRoleTable innerJoin RoleTable)
             .selectAll()
@@ -32,9 +30,7 @@ class RoleRepository {
             .map { it.toRoleResponse() }
     }
 
-    /**
-     * 分页查询角色列表
-     */
+    /** 分页查询角色列表。 */
     fun findPagedRoles(offset: Long, limit: Int, name: String?): List<RoleResponse> {
         val query = RoleTable.selectAll().where { RoleTable.deleted eq false }
 
@@ -47,9 +43,7 @@ class RoleRepository {
             .map { it.toRoleResponse() }
     }
 
-    /**
-     * 为用户绑定角色
-     */
+    /** 为用户追加单个角色。 */
     fun assignRoleToUser(userId: Long, roleId: Long): Boolean {
         val insertedRows = UserRoleTable.insert {
             it[UserRoleTable.userId] = userId
@@ -58,10 +52,7 @@ class RoleRepository {
         return insertedRows.insertedCount == 1
     }
 
-    /**
-     * 批量为用户分配角色 (多对多)
-     * 注释：先删除用户现有的所有角色关联，再批量插入新的关联
-     */
+    /** 覆盖用户的角色关联。 */
     fun replaceUserRoles(userId: Long, roleIds: List<Long>): Boolean {
         UserRoleTable.deleteWhere { UserRoleTable.userId eq userId }
         if (roleIds.isEmpty()) return true
@@ -72,9 +63,7 @@ class RoleRepository {
         return insertedRows.size == roleIds.size
     }
 
-    /**
-     * 批量更新角色权限关联
-     */
+    /** 覆盖角色的权限关联。 */
     fun replaceRolePermissions(roleId: Long, permissionIds: List<Long>): Boolean {
         RolePermissionTable.deleteWhere { RolePermissionTable.roleId eq roleId }
         if (permissionIds.isEmpty()) return true
@@ -86,9 +75,7 @@ class RoleRepository {
         return insertedRows.size == permissionIds.size
     }
 
-    /**
-     * 统计有效角色数量
-     */
+    /** 统计有效角色数量。 */
     fun countActiveRolesByIds(roleIds: List<Long>): Long {
         if (roleIds.isEmpty()) {
             return 0
@@ -102,9 +89,7 @@ class RoleRepository {
             .count()
     }
 
-    /**
-     * 快速检查用户是否拥有超级管理员角色
-     */
+    /** 判断用户是否拥有超级管理员角色。 */
     fun isSuperAdmin(userId: Long): Boolean {
         val query = (UserRoleTable innerJoin RoleTable)
             .select(RoleTable.id)
@@ -118,9 +103,7 @@ class RoleRepository {
         return !query.empty()
     }
 
-    /**
-     * 将数据库结果映射为角色响应模型
-     */
+    /** 映射角色查询结果。 */
     private fun ResultRow.toRoleResponse() = RoleResponse(
         id = this[RoleTable.id].value,
         name = this[RoleTable.name],
@@ -128,5 +111,4 @@ class RoleRepository {
         createTime = this[RoleTable.createTime],
         updateTime = this[RoleTable.updateTime]
     )
-
 }

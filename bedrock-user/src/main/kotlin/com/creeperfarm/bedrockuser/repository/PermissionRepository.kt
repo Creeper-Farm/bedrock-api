@@ -22,9 +22,7 @@ import org.springframework.stereotype.Repository
 @Repository
 class PermissionRepository {
 
-    /**
-     * 查询用户权限 (去重)
-     */
+    /** 查询用户的去重权限列表。 */
     fun findPermissionsByUserId(userId: Long): List<PermissionResponse> {
         return (UserRoleTable innerJoin RoleTable
                 innerJoin RolePermissionTable
@@ -36,9 +34,7 @@ class PermissionRepository {
             .distinctBy { it.code }
     }
 
-    /**
-     * 分页查询权限
-     */
+    /** 分页查询权限。 */
     fun findPagedPermissions(offset: Long, limit: Int, name: String?): List<PermissionResponse> {
         val query = PermissionTable.selectAll()
 
@@ -52,9 +48,7 @@ class PermissionRepository {
             .map { it.toPermissionResponse() }
     }
 
-    /**
-     * 查询权限总数
-     */
+    /** 统计权限总数。 */
     fun countActivePermissions(name: String?): Long {
         val query = PermissionTable.selectAll()
         if (!name.isNullOrBlank()) {
@@ -63,9 +57,7 @@ class PermissionRepository {
         return query.count()
     }
 
-    /**
-     * 根据权限 ID 列表统计存在的权限数量
-     */
+    /** 统计存在的权限 ID 数量。 */
     fun countPermissionsByIds(permissionIds: List<Long>): Long {
         if (permissionIds.isEmpty()) {
             return 0
@@ -77,19 +69,14 @@ class PermissionRepository {
             .count()
     }
 
-    /**
-     * 根据角色 ID 查询拥有的权限 ID 列表
-     * 注释：用于编辑角色时，在前端勾选已有的权限
-     */
+    /** 查询角色当前绑定的权限 ID 列表。 */
     fun findIdsByRoleId(roleId: Long): List<Long> {
         return RolePermissionTable.selectAll()
             .where { RolePermissionTable.roleId eq roleId }
             .map { it[RolePermissionTable.permissionId].value }
     }
 
-    /**
-     * 创建权限
-     */
+    /** 创建权限。 */
     fun createPermission(name: String, code: String, type: PermissionType): Long {
         val insertId = PermissionTable.insertAndGetId {
             it[PermissionTable.name] = name
@@ -99,9 +86,7 @@ class PermissionRepository {
         return insertId.value
     }
 
-    /**
-     * 更新权限
-     */
+    /** 更新权限。 */
     fun updatePermission(permissionId: Long, name: String, code: String, type: PermissionType): Boolean {
         val affectedRows = PermissionTable.update({ PermissionTable.id eq permissionId }) {
             it[PermissionTable.name] = name
@@ -111,20 +96,14 @@ class PermissionRepository {
         return affectedRows == 1
     }
 
-    /**
-     * 物理删除权限并清理关联关系
-     */
+    /** 物理删除权限并清理关联关系。 */
     fun deletePermission(permissionId: Long): Boolean {
-        // 清理角色-权限关联表
         RolePermissionTable.deleteWhere { RolePermissionTable.permissionId eq permissionId }
-        // 物理删除权限表记录
         val affectedRows = PermissionTable.deleteWhere { PermissionTable.id eq permissionId }
         return affectedRows == 1
     }
 
-    /**
-     * 将数据库结果映射为权限响应模型
-     */
+    /** 映射权限查询结果。 */
     private fun ResultRow.toPermissionResponse() = PermissionResponse(
         id = this[PermissionTable.id].value,
         name = this[PermissionTable.name],

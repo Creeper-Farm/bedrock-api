@@ -14,13 +14,9 @@ class UserService(
     private val userRepository: UserRepository,
     private val passwordEncoder: BCryptPasswordEncoder
 ) {
-    // 定义日志对象
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * 注册新用户
-     * 使用写事务，发生异常时会自动回滚
-     */
+    /** 注册新用户。 */
     @Transactional
     fun register(request: UserRegistrationRequest): Long {
         log.info("Attempting to register new user: {}", request.username)
@@ -41,10 +37,7 @@ class UserService(
         return userId
     }
 
-    /**
-     * 获取用户信息
-     * 使用只读事务 (readOnly = true)，优化数据库性能
-     */
+    /** 查询单个用户。 */
     @Transactional(readOnly = true)
     fun getUserById(userId: Long): UserResponse {
         log.info("Fetching profile for userId: {}", userId)
@@ -54,9 +47,7 @@ class UserService(
         }
     }
 
-    /**
-     * 注销账号（软删除）
-     */
+    /** 软删除当前账号。 */
     @Transactional
     fun deleteAccount(userId: Long) {
         val affectedRows = userRepository.softDeleteUser(userId)
@@ -67,9 +58,7 @@ class UserService(
         log.info("User account soft deleted successfully, userId: {}", userId)
     }
 
-    /**
-     * 更新当前用户资料
-     */
+    /** 更新当前用户资料。 */
     @Transactional
     fun updateProfile(userId: Long, request: UserProfileUpdateRequest): UserResponse {
         if (request.email == null && request.phone == null && request.avatar == null && request.bio == null) {
@@ -85,28 +74,20 @@ class UserService(
         return userRepository.findByUserId(userId) ?: throw RuntimeException("User not found")
     }
 
-    /**
-     * 分页获取用户列表
-     */
+    /** 分页查询用户列表。 */
     @Transactional(readOnly = true)
     fun listUsers(page: Int, size: Int, username: String?): List<UserResponse> {
         log.info("Fetching user list with pagination - Page: {}, Size: {}", page, size)
 
-        // 计算偏移量
         val offset = ((page - 1) * size).toLong()
-
-        // 从 repository 获取数据
         return userRepository.findUsers(offset, size, username)
     }
 
-    /**
-     * 分页获取属于某个角色的用户列表
-     */
+    /** 分页查询角色下的用户列表。 */
     @Transactional(readOnly = true)
     fun listUsersByRoleId(page: Int, size: Int, roleId: Long): List<UserResponse> {
         log.info("Fetching user list by roleId with pagination - Page: {}, Size: {}", page, size)
         val offset = ((page - 1) * size).toLong()
         return userRepository.findUsersByRoleId(offset, size, roleId)
     }
-
 }

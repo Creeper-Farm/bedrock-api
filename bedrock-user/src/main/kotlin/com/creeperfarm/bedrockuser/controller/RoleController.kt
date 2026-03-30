@@ -28,9 +28,7 @@ class RoleController(
 
     private val logger = LoggerFactory.getLogger(RoleController::class.java)
 
-    /**
-     * 获取角色列表
-     */
+    /** 分页查询角色列表。 */
     @Authenticated
     @RequiresPermissions(["system:role:list"])
     @GetMapping("/list")
@@ -44,9 +42,7 @@ class RoleController(
         return ApiResponse.success(roles)
     }
 
-    /**
-     * 根据用户 ID 获取角色列表
-     */
+    /** 查询指定用户的角色列表。 */
     @Authenticated
     @RequiresPermissions(["system:role:list"])
     @GetMapping("/user/{userId:\\d+}")
@@ -56,9 +52,7 @@ class RoleController(
         return ApiResponse.success(roles)
     }
 
-    /**
-     * 根据角色 ID 获取用户列表
-     */
+    /** 查询指定角色下的用户列表。 */
     @Authenticated
     @RequiresPermissions(["system:user:list"])
     @GetMapping("/{roleId:\\d+}/users")
@@ -72,9 +66,7 @@ class RoleController(
         return ApiResponse.success(users)
     }
 
-    /**
-     * 为用户重新绑定角色列表
-     */
+    /** 覆盖用户的角色绑定。 */
     @Authenticated
     @RequiresPermissions(["system:user:role"])
     @PutMapping("/user/{userId:\\d+}")
@@ -87,9 +79,7 @@ class RoleController(
         return ApiResponse.success(isUpdate)
     }
 
-    /**
-     * 为角色绑定权限列表
-     */
+    /** 覆盖角色的权限绑定。 */
     @Authenticated
     @RequiresPermissions(["system:role:permission"])
     @PutMapping("{roleId:\\d+}/permissions")

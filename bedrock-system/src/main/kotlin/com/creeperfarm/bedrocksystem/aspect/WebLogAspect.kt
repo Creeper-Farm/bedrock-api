@@ -25,10 +25,7 @@ class WebLogAspect {
         val attributes = RequestContextHolder.getRequestAttributes() as ServletRequestAttributes?
         val request: HttpServletRequest? = attributes?.request
 
-        // 打印请求内容：[GET] /api/test-param from 127.0.0.1
         log.info("Request: [${request?.method}] ${request?.requestURL} from ${request?.remoteAddr}")
-        // 打印调用的类名和方法名
         log.info("Handler: ${joinPoint.signature.declaringTypeName}.${joinPoint.signature.name}")
     }
-
 }

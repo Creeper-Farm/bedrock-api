@@ -16,9 +16,7 @@ class RoleService(
 ) {
     private val logger = LoggerFactory.getLogger(RoleService::class.java)
 
-    /**
-     * 分页获取角色列表
-     */
+    /** 分页查询角色列表。 */
     @Transactional(readOnly = true)
     fun listRoles(page: Int, size: Int, name: String?): List<RoleResponse> {
         logger.info("Fetching role list with pagination - Page: $page, Size $size")
@@ -26,18 +24,14 @@ class RoleService(
         return roleRepository.findPagedRoles(offset, size, name)
     }
 
-    /**
-     * 获取用户角色列表
-     */
+    /** 查询用户角色列表。 */
     @Transactional(readOnly = true)
     fun listRolesByUserId(userId: Long): List<RoleResponse> {
         logger.info("Fetching role list with userId: $userId")
         return roleRepository.findRolesByUserId(userId)
     }
 
-    /**
-     * 更新用户角色绑定关系
-     */
+    /** 覆盖用户角色绑定。 */
     @Transactional
     fun updateUserRoleAssignments(userId: Long, roleIds: List<Long>): Boolean {
         logger.info("Updating roles for userId: {}", userId)
@@ -61,9 +55,7 @@ class RoleService(
         return roleRepository.replaceUserRoles(userId, distinctRoleIds)
     }
 
-    /**
-     * 为角色重新绑定权限列表
-     */
+    /** 覆盖角色权限绑定。 */
     @Transactional
     fun updateRolePermissionAssignments(roleId: Long, permissionIds: List<Long>): Boolean {
         logger.info("Updating permissions for roleId: {}", roleId)
@@ -86,5 +78,4 @@ class RoleService(
 
         return roleRepository.replaceRolePermissions(roleId, distinctPermissionIds)
     }
-
 }

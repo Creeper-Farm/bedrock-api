@@ -22,12 +22,10 @@ object UserDeviceTable : LongIdTable("user_device") {
 
     val createTime = datetime("create_time").defaultExpression(CurrentDateTime)
     val updateTime = datetime("update_time").defaultExpression(CurrentDateTime)
-
-    // 逻辑删除标志
     val deleted = bool("deleted").default(false)
 
     init {
-        // 核心约束：确保一个用户在同一个设备上只有一条记录
+        // 保证同一用户在同一设备上只保留一条活跃记录。
         uniqueIndex("idx_user_device_unique", userId, deviceId)
     }
 }

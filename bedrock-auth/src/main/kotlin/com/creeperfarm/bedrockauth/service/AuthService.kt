@@ -25,25 +25,20 @@ class AuthService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * 用户登录逻辑
-     */
+    /** 完成账号密码登录并签发 token。 */
     @Transactional
     fun login(request: LoginRequest, servletRequest: HttpServletRequest): TokenResponse {
         log.info("User login attempt: {}", request.username)
 
-        // 获取用户实体和加密后的密码
         val user = userRepository.findByUsername(request.username) ?: throw IllegalArgumentException("Invalid username or password")
         val encodedPassword = userRepository.getPassword(request.username)
             ?: throw IllegalArgumentException("Database integrity error: Password missing")
 
-        // 校验密码是否正确
         if (!passwordEncoder.matches(request.password, encodedPassword)) {
             log.warn("Login failed: Password mismatch for user '{}'", request.username)
             throw IllegalArgumentException("Invalid username or password")
         }
 
-        // 登录成功后同步更新用户最后登录时间，并记录本次登录设备
         userRepository.updateLastLoginTime(user.id)
         userDeviceService.recordLoginDevice(
             userId = user.id,
@@ -51,35 +46,26 @@ class AuthService(
             ipAddress = resolveClientIp(servletRequest)
         )
 
-        // 查询用户拥有的所有权限代码 (如: ["user:add", "system:config"])
         val permissions = permissionService.getUserPermissions(user.id).map { it.code }
-
-        // 调用私有方法统一处理 Token 生成和 Redis 写入
         return generateAndStoreTokens(user.id, user.username, permissions)
     }
 
-    /**
-     * 刷新 Token 逻辑
-     * 注释：校验传入的 refreshToken，通过后发放新的双 Token
-     */
+    /** 校验 refresh token 并重新签发 token。 */
     @Transactional
     fun refreshToken(oldRefreshToken: String): TokenResponse {
         log.info("Attempting to refresh token")
 
         try {
-            // 校验并解析旧的 RefreshToken
             val decodedJWT = jwtUtils.decodeToken(oldRefreshToken)
             val userId = decodedJWT.subject.toLong()
             val username = decodedJWT.getClaim("username").asString()
 
-            // 用户必须处于可用状态（未软删除）
             val user = userRepository.findByUserId(userId)
             if (user == null) {
                 redisTemplate.delete(listOf("auth:token:access:$userId", "auth:token:refresh:$userId"))
                 throw RuntimeException("Account not available")
             }
 
-            // 检查 Redis 中是否存在且匹配 (安全检查)
             val redisKey = "auth:token:refresh:$userId"
             val savedToken = redisTemplate.opsForValue().get(redisKey)
 
@@ -88,10 +74,7 @@ class AuthService(
                 throw RuntimeException("Refresh token is invalid or has expired")
             }
 
-            // 重新获取最新的权限信息，防止权限在中途被修改
             val permissions = permissionService.getUserPermissions(userId).map { it.code }
-
-            // 生成新的双 Token 并更新 Redis
             log.info("Refresh token validated for user: {}, issuing new tokens", username)
             return generateAndStoreTokens(userId, username, permissions)
 
@@ -101,17 +84,11 @@ class AuthService(
         }
     }
 
-    /**
-     * 私有辅助方法：生成双 Token 并同步到 Redis
-     * 注释：复用登录和刷新的核心逻辑
-     */
+    /** 复用登录和刷新共用的发 token 逻辑。 */
     private fun generateAndStoreTokens(userId: Long, username: String, permissions: List<String>): TokenResponse {
-        // 在创建 AccessToken 时传入权限列表
         val at = jwtUtils.createAccessToken(userId, username, permissions)
-        // RefreshToken 通常不需要携带权限信息，保持轻量
         val rt = jwtUtils.createRefreshToken(userId, username)
 
-        // 存入 Redis，单位使用秒 (SECONDS)
         redisTemplate.opsForValue().set(
             "auth:token:access:$userId", at, jwtUtils.accessTokenExp, TimeUnit.SECONDS
         )
@@ -122,9 +99,7 @@ class AuthService(
         return TokenResponse(at, rt, jwtUtils.accessTokenExp, jwtUtils.refreshTokenExp)
     }
 
-    /**
-     * 注销登录态，删除 Redis 中保存的 token
-     */
+    /** 删除当前用户在 Redis 中的登录态。 */
     @Transactional
     fun logout(userId: Long) {
         val deleted = redisTemplate.delete(
@@ -134,7 +109,7 @@ class AuthService(
     }
 
     private fun resolveClientIp(request: HttpServletRequest): String? {
-        // 兼容反向代理场景：优先取 X-Forwarded-For / X-Real-IP
+        // 兼容反向代理头，优先取真实来源 IP。
         val xForwardedFor = request.getHeader("X-Forwarded-For")
         if (!xForwardedFor.isNullOrBlank()) {
             return xForwardedFor.split(",").firstOrNull()?.trim()

@@ -19,10 +19,7 @@ class UserController(private val userService: UserService) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * 用户注册接口
-     * 注释：接收注册请求，返回新创建的用户 ID
-     */
+    /** 注册用户。 */
     @PostMapping("/register")
     fun register(@RequestBody @Valid request: UserRegistrationRequest): ApiResponse<Long> {
         log.info("REST request to register user: {}", request.username)
@@ -30,10 +27,7 @@ class UserController(private val userService: UserService) {
         return ApiResponse.success(userId)
     }
 
-    /**
-     * 获取用户信息接口
-     * 注释：根据用户名获取活跃（未删除）的用户资料
-     */
+    /** 查询指定用户。 */
     @Authenticated
     @GetMapping("/{userId:\\d+}")
     fun getUserById(@PathVariable userId: Long): ApiResponse<UserResponse> {
@@ -42,9 +36,7 @@ class UserController(private val userService: UserService) {
         return ApiResponse.success(profile)
     }
 
-    /**
-     * 获取用户个人信息接口
-     */
+    /** 查询当前登录用户。 */
     @Authenticated
     @GetMapping("/profile")
     fun getCurrentUserProfile(request: HttpServletRequest): ApiResponse<UserResponse> {
@@ -55,9 +47,7 @@ class UserController(private val userService: UserService) {
         return ApiResponse.success(profile)
     }
 
-    /**
-     * 注销账号（软删除）接口
-     */
+    /** 软删除当前账号。 */
     @Authenticated
     @DeleteMapping("/account")
     fun deleteAccount(request: HttpServletRequest): ApiResponse<Unit> {
@@ -68,9 +58,7 @@ class UserController(private val userService: UserService) {
         return ApiResponse.success(null)
     }
 
-    /**
-     * 更新当前用户资料接口
-     */
+    /** 更新当前用户资料。 */
     @Authenticated
     @PutMapping("/profile")
     fun updateProfile(
@@ -83,10 +71,7 @@ class UserController(private val userService: UserService) {
         return ApiResponse.success(userService.updateProfile(userId, updateRequest))
     }
 
-    /**
-     * 获取所有用户列表接口（分页/搜索）
-     * 注释：需要管理员权限 system:user:list
-     */
+    /** 分页查询用户列表。 */
     @Authenticated
     @RequiresPermissions(["system:user:list"])
     @GetMapping("/list")

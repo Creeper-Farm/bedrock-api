@@ -18,17 +18,13 @@ import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.nio.file.AccessDeniedException
 import javax.security.sasl.AuthenticationException
 
-/**
- * 全局异常处理器：拦截并统一处理所有 Web 层及业务层抛出的异常
- */
+/** 统一映射接口异常响应。 */
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * [500] 处理所有未明确捕获的系统异常
-     */
+    /** 兜底处理未显式捕获的异常。 */
     @ExceptionHandler(Exception::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun handleGlobalException(e: Throwable): ApiResponse<Unit> {
@@ -36,9 +32,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(500, e.message ?: "Internal Server Error")
     }
 
-    /**
-     * [400] 处理业务参数校验异常 (如 IllegalArgumentException)
-     */
+    /** 处理业务参数校验异常。 */
     @ExceptionHandler(IllegalArgumentException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleIllegalArgumentException(e: IllegalArgumentException): ApiResponse<Unit> {
@@ -56,9 +50,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(400, errorDetails)
     }
 
-    /**
-     * [400] 处理 JSON 解析异常 (请求体格式错误或类型不匹配)
-     */
+    /** 处理请求体解析异常。 */
     @ExceptionHandler(HttpMessageNotReadableException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ApiResponse<Unit> {
@@ -66,9 +58,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(400, "Invalid JSON format or parameter type")
     }
 
-    /**
-     * [400] 处理缺少必要请求参数或路径变量
-     */
+    /** 处理缺失请求参数或路径变量。 */
     @ExceptionHandler(ServletRequestBindingException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleRequestBindingException(e: ServletRequestBindingException): ApiResponse<Unit> {
@@ -77,9 +67,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(400, detailMessage)
     }
 
-    /**
-     * [404] 处理接口不存在异常
-     */
+    /** 处理静态资源或路径未命中。 */
     @ExceptionHandler(NoResourceFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNoResourceFoundException(e: NoResourceFoundException): ApiResponse<Unit> {
@@ -87,9 +75,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(404, "Endpoint not found: ${e.resourcePath}")
     }
 
-    /**
-     * [404] 处理动态路由未命中的接口异常
-     */
+    /** 处理动态路由未命中。 */
     @ExceptionHandler(NoHandlerFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNoHandlerFoundException(e: NoHandlerFoundException): ApiResponse<Unit> {
@@ -97,9 +83,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(404, "Endpoint not found: ${e.requestURL}")
     }
 
-    /**
-     * [405] 处理请求方法错误 (如：POST 接口用了 GET)
-     */
+    /** 处理 HTTP 方法不匹配。 */
     @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     fun handleMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): ApiResponse<Unit> {
@@ -107,9 +91,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(405, "Method '${e.method}' not allowed")
     }
 
-    /**
-     * [415] 处理不支持的内容类型 (如：未设置 application/json)
-     */
+    /** 处理不支持的内容类型。 */
     @ExceptionHandler(HttpMediaTypeNotSupportedException::class)
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
     fun handleMediaTypeNotSupportedException(e: HttpMediaTypeNotSupportedException): ApiResponse<Unit> {
@@ -117,9 +99,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(415, "Unsupported Media Type: ${e.contentType}")
     }
 
-    /**
-     * [409] 处理数据库约束冲突 (如唯一索引冲突、用户名重复)
-     */
+    /** 处理数据库约束冲突。 */
     @ExceptionHandler(DataIntegrityViolationException::class)
     @ResponseStatus(HttpStatus.CONFLICT)
     fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ApiResponse<Unit> {
@@ -127,10 +107,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(409, "Data conflict or database constraint violation")
     }
 
-    /**
-     * [401] 处理自定义认证异常 (如 JWT 过期、缺失、非法)
-     * 注释：拦截我们在拦截器中手动抛出的 AuthException
-     */
+    /** 处理鉴权失败。 */
     @ExceptionHandler(AuthException::class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     fun handleAuthException(e: AuthException): ApiResponse<Unit> {
@@ -138,10 +115,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(401, e.message ?: "Unauthorized")
     }
 
-    /**
-     * [401] 拦截 Spring Security 的内置异常 (可选)
-     * 注释：如果未来你使用了 Security 的原生注解，这个可以捕获对应的异常
-     */
+    /** 处理 Spring Security 的认证异常。 */
     @ExceptionHandler(AuthenticationException::class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     fun handleSpringSecurityAuthException(e: AuthenticationException): ApiResponse<Unit> {
@@ -149,10 +123,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(401, e.message ?: "Authentication Failed")
     }
 
-    /**
-     * [403] 处理权限不足异常
-     * 注释：当用户已登录但缺少接口要求的权限字符时触发
-     */
+    /** 处理显式抛出的权限不足异常。 */
     @ExceptionHandler(AccessDeniedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun handleAccessDeniedException(e: Exception): ApiResponse<Unit> {
@@ -160,10 +131,7 @@ class GlobalExceptionHandler {
         return ApiResponse.error(403, "Forbidden: You do not have permission to access this resource")
     }
 
-    /**
-     * [403] 处理自定义业务权限异常
-     * 注释：如果在 PermissionInterceptor 或 Service 中手动抛出了包含特定关键字的 RuntimeException，在此统一捕获
-     */
+    /** 兜底识别业务层抛出的权限拒绝异常。 */
     @ExceptionHandler(IllegalStateException::class, RuntimeException::class)
     fun handleBusinessForbiddenException(e: Exception): ApiResponse<Unit> {
         val message = e.message

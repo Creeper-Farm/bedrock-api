@@ -28,10 +28,7 @@ class PermissionController(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    /**
-     * 分页查询权限列表
-     * 注释：需要管理员权限 system:permission:list
-     */
+    /** 分页查询权限列表。 */
     @Authenticated
     @RequiresPermissions(["system:permission:list"])
     @GetMapping("/list")
@@ -46,10 +43,7 @@ class PermissionController(
         return ApiResponse.success(PageResponse.of(total, permissions, page, size))
     }
 
-    /**
-     * 创建权限
-     * 注释：需要管理员权限 system:permission:create
-     */
+    /** 创建权限。 */
     @Authenticated
     @RequiresPermissions(["system:permission:create"])
     @PostMapping("/create")
@@ -60,10 +54,7 @@ class PermissionController(
         return ApiResponse.success(permissionId)
     }
 
-    /**
-     * 更新权限
-     * 注释: 需要管理员权限 system:permission:update
-     */
+    /** 更新权限。 */
     @Authenticated
     @RequiresPermissions(["system:permission:update"])
     @PutMapping("/update")
@@ -74,10 +65,7 @@ class PermissionController(
         return ApiResponse.success(isUpdate)
     }
 
-    /**
-     * 删除权限
-     * 注释：物理删除权限及其角色关联关系
-     */
+    /** 物理删除权限及其角色关联。 */
     @Authenticated
     @RequiresPermissions(["system:permission:delete"])
     @DeleteMapping("/delete/{permissionId:\\d+}")
