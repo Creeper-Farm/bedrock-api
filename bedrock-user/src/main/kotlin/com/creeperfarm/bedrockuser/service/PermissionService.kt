@@ -59,4 +59,13 @@ class PermissionService(
         logger.info("Updating permission - Permission code: $code, type: $type")
         return permissionRepository.updatePermission(permissionId, name, code, type)
     }
+
+    /**
+     * 删除权限
+     */
+    @Transactional
+    fun deletePermission(permissionId: Long): Boolean {
+        logger.info("Physically deleting permission - Permission id: {}", permissionId)
+        return permissionRepository.deletePermission(permissionId)
+    }
 }

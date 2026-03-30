@@ -10,7 +10,9 @@ import com.creeperfarm.bedrockuser.model.dto.PermissionUpdate
 import com.creeperfarm.bedrockuser.service.PermissionService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -70,6 +72,21 @@ class PermissionController(
     ): Result<Boolean> {
         val isUpdate = permissionService.updatePermission(request.id, request.name, request.code, request.type)
         return Result.success(isUpdate)
+    }
+
+    /**
+     * 删除权限
+     * 注释：物理删除权限及其角色关联关系
+     */
+    @Authenticated
+    @RequiresPermissions(["system:permission:delete"])
+    @DeleteMapping("/delete/{permissionId:\\d+}")
+    fun deletePermission(
+        @PathVariable permissionId: Long
+    ): Result<Boolean> {
+        logger.info("REST request to delete permission: {}", permissionId)
+        val isDeleted = permissionService.deletePermission(permissionId)
+        return Result.success(isDeleted)
     }
 
 }

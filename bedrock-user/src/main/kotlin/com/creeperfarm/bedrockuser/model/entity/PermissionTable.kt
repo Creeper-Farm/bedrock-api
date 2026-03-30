@@ -11,7 +11,4 @@ object PermissionTable : LongIdTable("permission") {
     val type = enumeration("type", PermissionType::class)
     val createTime = datetime("create_time").defaultExpression(CurrentDateTime)
     val updateTime = datetime("update_time").defaultExpression(CurrentDateTime)
-
-    // 软删除标志
-    val deleted = bool("deleted").default(false)
 }

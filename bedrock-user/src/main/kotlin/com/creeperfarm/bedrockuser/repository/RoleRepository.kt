@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockuser.repository
 
 import com.creeperfarm.bedrockuser.model.dto.RoleResponse
+import com.creeperfarm.bedrockuser.model.entity.RolePermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -10,6 +11,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.jdbc.andWhere
+import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
@@ -49,38 +51,40 @@ class RoleRepository {
     /**
      * 为用户绑定角色
      */
-    fun assignRoleToUser(userId: Long, roleId: Long) {
-        UserRoleTable.insert {
+    fun assignRoleToUser(userId: Long, roleId: Long): Boolean {
+        val insertedRows = UserRoleTable.insert {
             it[UserRoleTable.userId] = userId
             it[UserRoleTable.roleId] = roleId
         }
-    }
-
-    /**
-     * 删除用户的所有角色关联
-     * 注释：通常在重新分配角色前，先清空旧的关系
-     */
-    fun deleteAllRolesByUserId(userId: Long): Int {
-        return UserRoleTable.deleteWhere {
-            UserRoleTable.userId eq userId
-        }
+        return insertedRows.insertedCount == 1
     }
 
     /**
      * 批量为用户分配角色 (多对多)
      * 注释：先删除用户现有的所有角色关联，再批量插入新的关联
      */
-    fun updateUserRoles(userId: Long, roleIds: List<Long>) {
-        // 删除旧关联
+    fun updateUserRoles(userId: Long, roleIds: List<Long>): Boolean {
         UserRoleTable.deleteWhere { UserRoleTable.userId eq userId }
-
-        // 批量插入新关联
-        roleIds.forEach { roleId ->
-            UserRoleTable.insert {
-                it[UserRoleTable.userId] = userId
-                it[UserRoleTable.roleId] = roleId
-            }
+        if (roleIds.isEmpty()) return true
+        val insertedRows = UserRoleTable.batchInsert(roleIds) { roleId ->
+            this[UserRoleTable.userId] = userId
+            this[UserRoleTable.roleId] = roleId
         }
+        return insertedRows.size == roleIds.size
+    }
+
+    /**
+     * 批量更新角色权限关联
+     */
+    fun updateRolePermissions(roleId: Long, permissionIds: List<Long>): Boolean {
+        RolePermissionTable.deleteWhere { RolePermissionTable.roleId eq roleId }
+        if (permissionIds.isEmpty()) return true
+
+        val insertedRows = RolePermissionTable.batchInsert(permissionIds) { permissionId ->
+            this[RolePermissionTable.roleId] = roleId
+            this[RolePermissionTable.permissionId] = permissionId
+        }
+        return insertedRows.size == permissionIds.size
     }
 
     /**

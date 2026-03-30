@@ -4,7 +4,6 @@ import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
 import com.creeperfarm.bedrockcommon.model.dto.Result
 import com.creeperfarm.bedrockuser.model.dto.RoleResponse
-import com.creeperfarm.bedrockuser.model.dto.UserRoleBindRequest
 import com.creeperfarm.bedrockuser.model.dto.UserResponse
 import com.creeperfarm.bedrockuser.service.RoleService
 import com.creeperfarm.bedrockuser.service.UserService
@@ -79,11 +78,26 @@ class RoleController(
     @PutMapping("/user/{userId:\\d+}")
     fun updateUserRoles(
         @PathVariable userId: Long,
-        @RequestBody @Valid req: UserRoleBindRequest
-    ): Result<Unit> {
+        @RequestBody @Valid roleIds: List<Long>
+    ): Result<Boolean> {
         logger.info("REST request to update roles for userId: {}", userId)
-        roleService.updateUserRoles(userId, req.roleIds)
-        return Result.success(null)
+        val isUpdate = roleService.updateUserRoles(userId, roleIds)
+        return Result.success(isUpdate)
+    }
+
+    /**
+     * 为角色绑定权限列表
+     */
+    @Authenticated
+    @RequiresPermissions(["system:role:permission"])
+    @PutMapping("{roleId:\\d+}/permissions")
+    fun assignPermissions(
+        @PathVariable roleId: Long,
+        @RequestBody permissionIds: List<Long>
+    ): Result<Boolean> {
+        logger.info("REST request to update permissions for roleId: {}", roleId)
+        val isUpdated = roleService.updateRolePermissions(roleId, permissionIds)
+        return Result.success(isUpdated)
     }
 
 }

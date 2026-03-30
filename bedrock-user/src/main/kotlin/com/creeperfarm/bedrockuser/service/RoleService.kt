@@ -1,6 +1,7 @@
 package com.creeperfarm.bedrockuser.service
 
 import com.creeperfarm.bedrockuser.model.dto.RoleResponse
+import com.creeperfarm.bedrockuser.repository.PermissionRepository
 import com.creeperfarm.bedrockuser.repository.RoleRepository
 import com.creeperfarm.bedrockuser.repository.UserRepository
 import org.slf4j.LoggerFactory
@@ -10,7 +11,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class RoleService(
     private val roleRepository: RoleRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val permissionRepository: PermissionRepository
 ) {
     private val logger = LoggerFactory.getLogger(RoleService::class.java)
 
@@ -37,7 +39,7 @@ class RoleService(
      * 更新用户角色绑定关系
      */
     @Transactional
-    fun updateUserRoles(userId: Long, roleIds: List<Long>) {
+    fun updateUserRoles(userId: Long, roleIds: List<Long>): Boolean {
         logger.info("Updating roles for userId: {}", userId)
 
         if (userRepository.findByUserId(userId) == null) {
@@ -56,7 +58,33 @@ class RoleService(
             throw RuntimeException("Some roles do not exist")
         }
 
-        roleRepository.updateUserRoles(userId, distinctRoleIds)
+        return roleRepository.updateUserRoles(userId, distinctRoleIds)
+    }
+
+    /**
+     * 为角色重新绑定权限列表
+     */
+    @Transactional
+    fun updateRolePermissions(roleId: Long, permissionIds: List<Long>): Boolean {
+        logger.info("Updating permissions for roleId: {}", roleId)
+
+        if (roleRepository.countActiveRolesByIds(listOf(roleId)) != 1L) {
+            logger.warn("Update role permissions failed: Role '{}' not found or deleted", roleId)
+            throw RuntimeException("Role not found")
+        }
+
+        val distinctPermissionIds = permissionIds.distinct()
+        if (distinctPermissionIds.any { it <= 0 }) {
+            throw IllegalArgumentException("Permission ID must be greater than 0")
+        }
+
+        val existingPermissionCount = permissionRepository.countPermissionsByIds(distinctPermissionIds)
+        if (existingPermissionCount != distinctPermissionIds.size.toLong()) {
+            logger.warn("Update role permissions failed: Some permissions do not exist, roleId: {}", roleId)
+            throw RuntimeException("Some permissions do not exist")
+        }
+
+        return roleRepository.updateRolePermissions(roleId, distinctPermissionIds)
     }
 
 }

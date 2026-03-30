@@ -9,6 +9,7 @@ import com.creeperfarm.bedrockuser.model.enums.PermissionType
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.jdbc.*
 import org.springframework.stereotype.Repository
@@ -25,7 +26,6 @@ class PermissionRepository {
                 innerJoin PermissionTable)
             .selectAll()
             .where { UserRoleTable.userId eq userId }
-            .andWhere { PermissionTable.deleted eq false }
             .andWhere { RoleTable.deleted eq false }
             .map { it.toPermissionResponse() }
             .distinctBy { it.code }
@@ -35,7 +35,7 @@ class PermissionRepository {
      * 分页查询权限
      */
     fun findPermissionsPaged(offset: Long, limit: Int, name: String?): List<PermissionResponse> {
-        val query = PermissionTable.selectAll().where { PermissionTable.deleted eq false }
+        val query = PermissionTable.selectAll()
 
         if (!name.isNullOrBlank()) {
             query.andWhere { PermissionTable.name like "%$name%" }
@@ -51,11 +51,25 @@ class PermissionRepository {
      * 查询权限总数
      */
     fun countActivePermissions(name: String?): Long {
-        val query = PermissionTable.selectAll().where { PermissionTable.deleted eq false }
+        val query = PermissionTable.selectAll()
         if (!name.isNullOrBlank()) {
             query.andWhere { PermissionTable.name like "%$name%" }
         }
         return query.count()
+    }
+
+    /**
+     * 根据权限 ID 列表统计存在的权限数量
+     */
+    fun countPermissionsByIds(permissionIds: List<Long>): Long {
+        if (permissionIds.isEmpty()) {
+            return 0
+        }
+
+        return PermissionTable
+            .select(PermissionTable.id)
+            .where { PermissionTable.id inList permissionIds }
+            .count()
     }
 
     /**
@@ -93,15 +107,14 @@ class PermissionRepository {
     }
 
     /**
-     * 软删除权限并清理关联关系
+     * 物理删除权限并清理关联关系
      */
-    fun deletePermission(permissionId: Long) {
-        // 1. 清理角色-权限关联表
+    fun deletePermission(permissionId: Long): Boolean {
+        // 清理角色-权限关联表
         RolePermissionTable.deleteWhere { RolePermissionTable.permissionId eq permissionId }
-        // 2. 逻辑删除权限表记录
-        PermissionTable.update({ PermissionTable.id eq permissionId }) {
-            it[PermissionTable.deleted] = true
-        }
+        // 物理删除权限表记录
+        val affectedRows = PermissionTable.deleteWhere { PermissionTable.id eq permissionId }
+        return affectedRows == 1
     }
 
     /**
