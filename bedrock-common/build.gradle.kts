@@ -9,6 +9,7 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-validation")
 
     api("org.jetbrains.kotlin:kotlin-reflect")
+    api("tools.jackson.module:jackson-module-kotlin")
     api("org.postgresql:postgresql")
 
     api("org.jetbrains.exposed:exposed-core:1.0.0")
