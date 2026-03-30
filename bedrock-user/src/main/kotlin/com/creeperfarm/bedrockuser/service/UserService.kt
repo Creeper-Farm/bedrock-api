@@ -31,7 +31,9 @@ class UserService(
             throw RuntimeException("Username already exists")
         }
 
-        val encodedPassword = passwordEncoder.encode(req.password)
+        val encodedPassword = requireNotNull(passwordEncoder.encode(req.password)) {
+            "Encoded password must not be null"
+        }
 
         val userId = userRepository.createUser(req, encodedPassword)
 

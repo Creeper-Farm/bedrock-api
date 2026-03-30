@@ -21,7 +21,7 @@ class DatabaseInitializer : CommandLineRunner {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Transactional
-    override fun run(vararg args: String?) {
+    override fun run(vararg args: String) {
         log.info("Starting database schema synchronization check...")
 
         // MigrationUtils 会自动计算这些表与数据库当前状态的差异
