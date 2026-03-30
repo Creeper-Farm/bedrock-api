@@ -4,8 +4,6 @@ spring:
   profiles:
     # 核心：默认激活 dev 环境。部署到生产时，通过启动参数 -Dspring.profiles.active=prod 切换
     active: dev
-  main:
-    allow-bean-definition-overriding: true
   mvc:
     throw-exception-if-no-handler-found: true
   web:

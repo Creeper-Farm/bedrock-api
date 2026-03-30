@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
 import java.util.TimeZone
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class JacksonConfig {
 
     @Bean

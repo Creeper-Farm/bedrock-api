@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.transaction.annotation.EnableTransactionManagement
 import javax.sql.DataSource
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableTransactionManagement
 class ExposedConfig(
     @Value("\${spring.exposed.show-sql:false}")

@@ -10,11 +10,11 @@ import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.slf4j.LoggerFactory
 import org.springframework.boot.CommandLineRunner
-import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
-@Configuration("userDatabaseInitializer")
+@Component("userDatabaseInitializer")
 @Order(10)
 class DatabaseInitializer : CommandLineRunner {
 
