@@ -6,7 +6,7 @@ import com.creeperfarm.bedrockauth.model.response.TokenResponse
 import com.creeperfarm.bedrockauth.service.AuthService
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockcommon.model.response.ApiResponse
-import jakarta.security.auth.message.AuthException
+import com.creeperfarm.bedrockcommon.web.requireAuthenticatedUserId
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.PostMapping
@@ -39,8 +39,7 @@ class AuthController(private val authService: AuthService) {
     @Authenticated
     @PostMapping("/logout")
     fun logout(request: HttpServletRequest): ApiResponse<Unit> {
-        val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
-            ?: throw AuthException("Missing authenticated user")
+        val userId = request.requireAuthenticatedUserId()
         log.info("REST request to logout userId: {}", userId)
         authService.logout(userId)
         return ApiResponse.success(null)

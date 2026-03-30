@@ -11,6 +11,7 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
@@ -24,25 +25,15 @@ class PermissionRepository {
 
     /** 查询用户的去重权限列表。 */
     fun findPermissionsByUserId(userId: Long): List<PermissionResponse> {
-        return (UserRoleTable innerJoin RoleTable
-                innerJoin RolePermissionTable
-                innerJoin PermissionTable)
-            .selectAll()
-            .where { UserRoleTable.userId eq userId }
-            .andWhere { RoleTable.deleted eq false }
+        return userPermissionsQuery(userId)
             .map { it.toPermissionResponse() }
             .distinctBy { it.code }
     }
 
     /** 分页查询权限。 */
     fun findPagedPermissions(offset: Long, limit: Int, name: String?): List<PermissionResponse> {
-        val query = PermissionTable.selectAll()
-
-        if (!name.isNullOrBlank()) {
-            query.andWhere { PermissionTable.name like "%$name%" }
-        }
-
-        return query.orderBy(PermissionTable.createTime to SortOrder.DESC)
+        return permissionQuery(name)
+            .orderBy(PermissionTable.createTime to SortOrder.DESC)
             .limit(limit)
             .offset(offset)
             .map { it.toPermissionResponse() }
@@ -50,29 +41,25 @@ class PermissionRepository {
 
     /** 统计权限总数。 */
     fun countActivePermissions(name: String?): Long {
-        val query = PermissionTable.selectAll()
-        if (!name.isNullOrBlank()) {
-            query.andWhere { PermissionTable.name like "%$name%" }
-        }
-        return query.count()
+        return permissionQuery(name).count()
     }
 
     /** 统计存在的权限 ID 数量。 */
     fun countPermissionsByIds(permissionIds: List<Long>): Long {
-        if (permissionIds.isEmpty()) {
+        val distinctIds = permissionIds.distinct()
+        if (distinctIds.isEmpty()) {
             return 0
         }
 
         return PermissionTable
             .select(PermissionTable.id)
-            .where { PermissionTable.id inList permissionIds }
+            .where { PermissionTable.id inList distinctIds }
             .count()
     }
 
     /** 查询角色当前绑定的权限 ID 列表。 */
     fun findIdsByRoleId(roleId: Long): List<Long> {
-        return RolePermissionTable.selectAll()
-            .where { RolePermissionTable.roleId eq roleId }
+        return rolePermissionsQuery(roleId)
             .map { it[RolePermissionTable.permissionId].value }
     }
 
@@ -101,6 +88,28 @@ class PermissionRepository {
         RolePermissionTable.deleteWhere { RolePermissionTable.permissionId eq permissionId }
         val affectedRows = PermissionTable.deleteWhere { PermissionTable.id eq permissionId }
         return affectedRows == 1
+    }
+
+    private fun permissionQuery(name: String?): Query {
+        val query = PermissionTable.selectAll()
+        if (!name.isNullOrBlank()) {
+            query.andWhere { PermissionTable.name like "%$name%" }
+        }
+        return query
+    }
+
+    private fun userPermissionsQuery(userId: Long): Query {
+        return (UserRoleTable innerJoin RoleTable
+                innerJoin RolePermissionTable
+                innerJoin PermissionTable)
+            .selectAll()
+            .where { UserRoleTable.userId eq userId }
+            .andWhere { RoleTable.deleted eq false }
+    }
+
+    private fun rolePermissionsQuery(roleId: Long): Query {
+        return RolePermissionTable.selectAll()
+            .where { RolePermissionTable.roleId eq roleId }
     }
 
     /** 映射权限查询结果。 */

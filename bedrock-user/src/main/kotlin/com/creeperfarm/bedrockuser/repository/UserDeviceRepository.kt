@@ -6,6 +6,7 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.update
 import org.springframework.stereotype.Repository
@@ -15,8 +16,7 @@ import java.time.LocalDateTime
 class UserDeviceRepository {
 
     fun findByUserIdAndDeviceId(userId: Long, deviceId: String): UserDeviceLoginRecord? {
-        return UserDeviceTable.selectAll()
-            .where { activeDeviceCondition(userId, deviceId) }
+        return activeDeviceQuery(userId, deviceId)
             .map { it.toUserDeviceLoginRecord() }
             .singleOrNull()
     }
@@ -54,7 +54,7 @@ class UserDeviceRepository {
         ipAddress: String?,
         now: LocalDateTime
     ) {
-        UserDeviceTable.update({ activeDeviceCondition(userId, deviceId) }) {
+        UserDeviceTable.update({ activeDeviceRecordCondition(userId, deviceId) }) {
             it[UserDeviceTable.lastLoginTime] = now
             it[UserDeviceTable.loginCount] = loginCount
             it[UserDeviceTable.appVersion] = appVersion
@@ -69,8 +69,13 @@ class UserDeviceRepository {
         loginCount = this[UserDeviceTable.loginCount]
     )
 
-    private fun activeDeviceCondition(userId: Long, deviceId: String) =
-        (UserDeviceTable.userId eq userId) and
-            (UserDeviceTable.deviceId eq deviceId) and
-            (UserDeviceTable.deleted eq false)
+    private fun activeDeviceQuery(userId: Long, deviceId: String): Query {
+        return UserDeviceTable.selectAll()
+            .where { activeDeviceRecordCondition(userId, deviceId) }
+    }
+
+    private fun activeDeviceRecordCondition(userId: Long, deviceId: String) =
+        (UserDeviceTable.userId eq userId) and (UserDeviceTable.deviceId eq deviceId) and activeDeviceCondition()
+
+    private fun activeDeviceCondition() = UserDeviceTable.deleted eq false
 }

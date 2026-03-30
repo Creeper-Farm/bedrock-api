@@ -2,13 +2,14 @@ package com.creeperfarm.bedrockuser.repository
 
 import com.creeperfarm.bedrockuser.model.request.UserProfileUpdateRequest
 import com.creeperfarm.bedrockuser.model.request.UserRegistrationRequest
-import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserTable
+import com.creeperfarm.bedrockuser.model.response.UserResponse
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.jdbc.Query
 import org.jetbrains.exposed.v1.jdbc.andWhere
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.select
@@ -22,16 +23,14 @@ class UserRepository {
 
     /** 查询单个有效用户。 */
     fun findByUserId(userId: Long): UserResponse? {
-        return UserTable.selectAll()
-            .where { (UserTable.id eq userId) and (UserTable.deleted eq false) }
+        return activeUserByIdQuery(userId)
             .map { it.toUserResponse() }
             .singleOrNull()
     }
 
     /** 按用户名查询有效用户。 */
     fun findByUsername(username: String): UserResponse? {
-        return UserTable.selectAll()
-            .where { (UserTable.username eq username) and (UserTable.deleted eq false) }
+        return activeUserByUsernameQuery(username)
             .map { it.toUserResponse() }
             .singleOrNull()
     }
@@ -49,22 +48,22 @@ class UserRepository {
 
     /** 查询登录校验所需的密码摘要。 */
     fun getPassword(username: String): String? {
-        return UserTable.select(UserTable.password)
-            .where { (UserTable.username eq username) and (UserTable.deleted eq false) }
+        return activeUserByUsernameQuery(username)
+            .adjustSelect { select(UserTable.password) }
             .map { it[UserTable.password] }
             .singleOrNull()
     }
 
     /** 更新最后登录时间。 */
     fun updateLastLoginTime(userId: Long) {
-        UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
+        UserTable.update({ activeUserCondition(userId) }) {
             it[lastLoginTime] = LocalDateTime.now()
         }
     }
 
     /** 软删除用户。 */
     fun softDeleteUser(userId: Long): Int {
-        return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
+        return UserTable.update({ activeUserCondition(userId) }) {
             it[deleted] = true
             it[updateTime] = LocalDateTime.now()
         }
@@ -72,7 +71,7 @@ class UserRepository {
 
     /** 更新用户资料。 */
     fun updateUserProfile(userId: Long, request: UserProfileUpdateRequest): Int {
-        return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
+        return UserTable.update({ activeUserCondition(userId) }) {
             request.email?.let { email -> it[UserTable.email] = email }
             request.phone?.let { phone -> it[UserTable.phone] = phone }
             request.avatar?.let { avatar -> it[UserTable.avatar] = avatar }
@@ -83,26 +82,54 @@ class UserRepository {
 
     /** 分页查询有效用户。 */
     fun findUsers(offset: Long, limit: Int, username: String?): List<UserResponse> {
-        val query = UserTable.selectAll().where { UserTable.deleted eq false }
-
-        if (!username.isNullOrBlank()) {
-            query.andWhere { UserTable.username like "%$username%" }
-        }
-
-        return query.limit(limit)
-            .offset(offset)
-            .map { it.toUserResponse() }
-    }
-
-    /** 查询角色下的有效用户。 */
-    fun findUsersByRoleId(offset: Long, limit: Int, roleId: Long): List<UserResponse> {
-        return (UserTable innerJoin UserRoleTable)
-            .selectAll()
-            .where { (UserRoleTable.roleId eq roleId) and (UserTable.deleted eq false) }
+        return buildActiveUsersQuery(username)
             .limit(limit)
             .offset(offset)
             .map { it.toUserResponse() }
     }
+
+    /** 统计有效用户数量。 */
+    fun countUsers(username: String?): Long {
+        return buildActiveUsersQuery(username).count()
+    }
+
+    /** 查询角色下的有效用户。 */
+    fun findUsersByRoleId(offset: Long, limit: Int, roleId: Long): List<UserResponse> {
+        return usersByRoleQuery(roleId)
+            .limit(limit)
+            .offset(offset)
+            .map { it.toUserResponse() }
+    }
+
+    /** 统计角色下的有效用户数量。 */
+    fun countUsersByRoleId(roleId: Long): Long {
+        return usersByRoleQuery(roleId).count()
+    }
+
+    private fun buildActiveUsersQuery(username: String?): Query {
+        val query = activeUsersQuery()
+        if (!username.isNullOrBlank()) {
+            query.andWhere { UserTable.username like "%$username%" }
+        }
+        return query
+    }
+
+    private fun usersByRoleQuery(roleId: Long): Query {
+        return (UserTable innerJoin UserRoleTable)
+            .selectAll()
+            .where { (UserRoleTable.roleId eq roleId) and activeUserCondition() }
+    }
+
+    private fun activeUsersQuery(): Query = UserTable.selectAll().where { activeUserCondition() }
+
+    private fun activeUserByIdQuery(userId: Long): Query = activeUsersQuery().andWhere { UserTable.id eq userId }
+
+    private fun activeUserByUsernameQuery(username: String): Query =
+        activeUsersQuery().andWhere { UserTable.username eq username }
+
+    private fun activeUserCondition(userId: Long) = (UserTable.id eq userId) and activeUserCondition()
+
+    private fun activeUserCondition() = UserTable.deleted eq false
 
     /** 映射用户查询结果。 */
     private fun ResultRow.toUserResponse() = UserResponse(

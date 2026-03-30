@@ -4,6 +4,7 @@ import com.creeperfarm.bedrockuser.model.request.UserProfileUpdateRequest
 import com.creeperfarm.bedrockuser.model.request.UserRegistrationRequest
 import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.repository.UserRepository
+import com.creeperfarm.bedrockcommon.web.pageQuery
 import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
@@ -78,16 +79,27 @@ class UserService(
     @Transactional(readOnly = true)
     fun listUsers(page: Int, size: Int, username: String?): List<UserResponse> {
         log.info("Fetching user list with pagination - Page: {}, Size: {}", page, size)
+        val query = pageQuery(page, size)
+        return userRepository.findUsers(query.offset, query.size, username)
+    }
 
-        val offset = ((page - 1) * size).toLong()
-        return userRepository.findUsers(offset, size, username)
+    /** 统计用户列表数量。 */
+    @Transactional(readOnly = true)
+    fun countUsers(username: String?): Long {
+        return userRepository.countUsers(username)
     }
 
     /** 分页查询角色下的用户列表。 */
     @Transactional(readOnly = true)
     fun listUsersByRoleId(page: Int, size: Int, roleId: Long): List<UserResponse> {
         log.info("Fetching user list by roleId with pagination - Page: {}, Size: {}", page, size)
-        val offset = ((page - 1) * size).toLong()
-        return userRepository.findUsersByRoleId(offset, size, roleId)
+        val query = pageQuery(page, size)
+        return userRepository.findUsersByRoleId(query.offset, query.size, roleId)
+    }
+
+    /** 统计角色下的用户数量。 */
+    @Transactional(readOnly = true)
+    fun countUsersByRoleId(roleId: Long): Long {
+        return userRepository.countUsersByRoleId(roleId)
     }
 }

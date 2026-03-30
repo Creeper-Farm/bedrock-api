@@ -4,6 +4,7 @@ import com.creeperfarm.bedrockuser.model.response.RoleResponse
 import com.creeperfarm.bedrockuser.repository.PermissionRepository
 import com.creeperfarm.bedrockuser.repository.RoleRepository
 import com.creeperfarm.bedrockuser.repository.UserRepository
+import com.creeperfarm.bedrockcommon.web.pageQuery
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,8 +21,14 @@ class RoleService(
     @Transactional(readOnly = true)
     fun listRoles(page: Int, size: Int, name: String?): List<RoleResponse> {
         logger.info("Fetching role list with pagination - Page: $page, Size $size")
-        val offset = ((page - 1) * size).toLong()
-        return roleRepository.findPagedRoles(offset, size, name)
+        val query = pageQuery(page, size)
+        return roleRepository.findPagedRoles(query.offset, query.size, name)
+    }
+
+    /** 统计角色列表数量。 */
+    @Transactional(readOnly = true)
+    fun countRoles(name: String?): Long {
+        return roleRepository.countRoles(name)
     }
 
     /** 查询用户角色列表。 */
@@ -36,23 +43,25 @@ class RoleService(
     fun updateUserRoleAssignments(userId: Long, roleIds: List<Long>): Boolean {
         logger.info("Updating roles for userId: {}", userId)
 
-        if (userRepository.findByUserId(userId) == null) {
-            logger.warn("Update user roles failed: User '{}' not found or deleted", userId)
-            throw RuntimeException("User not found")
-        }
-
-        val distinctRoleIds = roleIds.distinct()
-        if (distinctRoleIds.any { it <= 0 }) {
-            throw IllegalArgumentException("Role ID must be greater than 0")
-        }
-
-        val existingRoleCount = roleRepository.countActiveRolesByIds(distinctRoleIds)
-        if (existingRoleCount != distinctRoleIds.size.toLong()) {
-            logger.warn("Update user roles failed: Some roles do not exist or are deleted, userId: {}", userId)
-            throw RuntimeException("Some roles do not exist")
-        }
-
+        requireUser(userId, "Update user roles")
+        val distinctRoleIds = sanitizeIds(roleIds, "Role")
+        requireRoles(distinctRoleIds, userId, "Update user roles")
         return roleRepository.replaceUserRoles(userId, distinctRoleIds)
+    }
+
+    /** 为用户追加单个角色绑定。 */
+    @Transactional
+    fun addUserRoleAssignment(userId: Long, roleId: Long): Boolean {
+        logger.info("Adding role {} for userId: {}", roleId, userId)
+        requireUser(userId, "Add user role")
+
+        val validRoleId = sanitizeIds(listOf(roleId), "Role").single()
+        requireRoles(listOf(validRoleId), userId, "Add user role")
+        if (roleRepository.hasUserRole(userId, validRoleId)) {
+            return true
+        }
+
+        return roleRepository.assignRoleToUser(userId, validRoleId)
     }
 
     /** 覆盖角色权限绑定。 */
@@ -60,22 +69,62 @@ class RoleService(
     fun updateRolePermissionAssignments(roleId: Long, permissionIds: List<Long>): Boolean {
         logger.info("Updating permissions for roleId: {}", roleId)
 
+        requireRole(roleId, "Update role permissions")
+        val distinctPermissionIds = sanitizeIds(permissionIds, "Permission")
+        requirePermissions(distinctPermissionIds, roleId, "Update role permissions")
+        return roleRepository.replaceRolePermissions(roleId, distinctPermissionIds)
+    }
+
+    /** 为角色追加单个权限绑定。 */
+    @Transactional
+    fun addRolePermissionAssignment(roleId: Long, permissionId: Long): Boolean {
+        logger.info("Adding permission {} for roleId: {}", permissionId, roleId)
+        requireRole(roleId, "Add role permission")
+
+        val validPermissionId = sanitizeIds(listOf(permissionId), "Permission").single()
+        requirePermissions(listOf(validPermissionId), roleId, "Add role permission")
+        if (roleRepository.hasRolePermission(roleId, validPermissionId)) {
+            return true
+        }
+
+        return roleRepository.assignPermissionToRole(roleId, validPermissionId)
+    }
+
+    private fun sanitizeIds(ids: List<Long>, subject: String): List<Long> {
+        val distinctIds = ids.distinct()
+        if (distinctIds.any { it <= 0 }) {
+            throw IllegalArgumentException("$subject ID must be greater than 0")
+        }
+        return distinctIds
+    }
+
+    private fun requireUser(userId: Long, operation: String) {
+        if (userRepository.findByUserId(userId) == null) {
+            logger.warn("{} failed: User '{}' not found or deleted", operation, userId)
+            throw RuntimeException("User not found")
+        }
+    }
+
+    private fun requireRole(roleId: Long, operation: String) {
         if (roleRepository.countActiveRolesByIds(listOf(roleId)) != 1L) {
-            logger.warn("Update role permissions failed: Role '{}' not found or deleted", roleId)
+            logger.warn("{} failed: Role '{}' not found or deleted", operation, roleId)
             throw RuntimeException("Role not found")
         }
+    }
 
-        val distinctPermissionIds = permissionIds.distinct()
-        if (distinctPermissionIds.any { it <= 0 }) {
-            throw IllegalArgumentException("Permission ID must be greater than 0")
+    private fun requireRoles(roleIds: List<Long>, userId: Long, operation: String) {
+        val existingRoleCount = roleRepository.countActiveRolesByIds(roleIds)
+        if (existingRoleCount != roleIds.size.toLong()) {
+            logger.warn("{} failed: Some roles do not exist or are deleted, userId: {}", operation, userId)
+            throw RuntimeException("Some roles do not exist")
         }
+    }
 
-        val existingPermissionCount = permissionRepository.countPermissionsByIds(distinctPermissionIds)
-        if (existingPermissionCount != distinctPermissionIds.size.toLong()) {
-            logger.warn("Update role permissions failed: Some permissions do not exist, roleId: {}", roleId)
+    private fun requirePermissions(permissionIds: List<Long>, roleId: Long, operation: String) {
+        val existingPermissionCount = permissionRepository.countPermissionsByIds(permissionIds)
+        if (existingPermissionCount != permissionIds.size.toLong()) {
+            logger.warn("{} failed: Some permissions do not exist, roleId: {}", operation, roleId)
             throw RuntimeException("Some permissions do not exist")
         }
-
-        return roleRepository.replaceRolePermissions(roleId, distinctPermissionIds)
     }
 }

@@ -3,6 +3,7 @@ package com.creeperfarm.bedrockuser.service
 import com.creeperfarm.bedrockuser.model.response.PermissionResponse
 import com.creeperfarm.bedrockuser.model.enums.PermissionType
 import com.creeperfarm.bedrockuser.repository.PermissionRepository
+import com.creeperfarm.bedrockcommon.web.pageQuery
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,8 +25,8 @@ class PermissionService(
     @Transactional(readOnly = true)
     fun listPermissions(page: Int, size: Int, name: String?): List<PermissionResponse> {
         logger.info("Getting permission list with pagination - Page: $page, Size: $size, Username: $name")
-        val offset = ((page - 1) * size).toLong()
-        return permissionRepository.findPagedPermissions(offset, size, name)
+        val query = pageQuery(page, size)
+        return permissionRepository.findPagedPermissions(query.offset, query.size, name)
     }
 
     /** 统计权限数量。 */

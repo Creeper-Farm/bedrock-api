@@ -3,11 +3,12 @@ package com.creeperfarm.bedrockuser.controller
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
 import com.creeperfarm.bedrockcommon.model.response.ApiResponse
+import com.creeperfarm.bedrockcommon.model.response.PageResponse
+import com.creeperfarm.bedrockcommon.web.requireAuthenticatedUserId
 import com.creeperfarm.bedrockuser.model.request.UserProfileUpdateRequest
 import com.creeperfarm.bedrockuser.model.request.UserRegistrationRequest
 import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.service.UserService
-import jakarta.security.auth.message.AuthException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -40,8 +41,7 @@ class UserController(private val userService: UserService) {
     @Authenticated
     @GetMapping("/profile")
     fun getCurrentUserProfile(request: HttpServletRequest): ApiResponse<UserResponse> {
-        val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
-            ?: throw AuthException("Missing authenticated user")
+        val userId = request.requireAuthenticatedUserId()
         log.info("REST request to get user profile: $userId")
         val profile = userService.getUserById(userId)
         return ApiResponse.success(profile)
@@ -51,8 +51,7 @@ class UserController(private val userService: UserService) {
     @Authenticated
     @DeleteMapping("/account")
     fun deleteAccount(request: HttpServletRequest): ApiResponse<Unit> {
-        val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
-            ?: throw AuthException("Missing authenticated user")
+        val userId = request.requireAuthenticatedUserId()
         log.info("REST request to soft delete account, userId: {}", userId)
         userService.deleteAccount(userId)
         return ApiResponse.success(null)
@@ -65,8 +64,7 @@ class UserController(private val userService: UserService) {
         request: HttpServletRequest,
         @RequestBody @Valid updateRequest: UserProfileUpdateRequest
     ): ApiResponse<UserResponse> {
-        val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
-            ?: throw AuthException("Missing authenticated user")
+        val userId = request.requireAuthenticatedUserId()
         log.info("REST request to update profile, userId: {}", userId)
         return ApiResponse.success(userService.updateProfile(userId, updateRequest))
     }
@@ -79,9 +77,10 @@ class UserController(private val userService: UserService) {
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) username: String?
-    ): ApiResponse<List<UserResponse>> {
+    ): ApiResponse<PageResponse<UserResponse>> {
         log.info("REST request to get user list. Page: {}, Size: {}, Search: {}", page, size, username)
         val users = userService.listUsers(page, size, username)
-        return ApiResponse.success(users)
+        val total = userService.countUsers(username)
+        return ApiResponse.success(PageResponse.of(total, users, page, size))
     }
 }
