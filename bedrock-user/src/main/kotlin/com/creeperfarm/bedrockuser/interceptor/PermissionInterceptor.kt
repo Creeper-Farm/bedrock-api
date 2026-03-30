@@ -1,7 +1,7 @@
 package com.creeperfarm.bedrockuser.interceptor
 
 import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
-import com.creeperfarm.bedrockcommon.model.enums.Logical
+import com.creeperfarm.bedrockcommon.model.enums.PermissionMatchMode
 import com.creeperfarm.bedrockuser.repository.PermissionRepository
 import com.creeperfarm.bedrockuser.repository.RoleRepository
 import jakarta.servlet.http.HttpServletRequest
@@ -40,11 +40,11 @@ class PermissionInterceptor(
             }
 
             // 从数据库查询该用户拥有的所有权限字符 (code)
-            val ownedPermissionCodes = permissionRepository.findByUserId(userId).map { it.code }.toSet()
+            val ownedPermissionCodes = permissionRepository.findPermissionsByUserId(userId).map { it.code }.toSet()
 
             val requiredPermissions = annotation.value
 
-            if (annotation.logical == Logical.AND) {
+            if (annotation.matchMode == PermissionMatchMode.AND) {
                 // 全部包含
                 requiredPermissions.all { ownedPermissionCodes.contains(it) }
             } else {

@@ -1,6 +1,6 @@
 package com.creeperfarm.bedrockcommon.exception
 
-import com.creeperfarm.bedrockcommon.model.dto.Result
+import com.creeperfarm.bedrockcommon.model.response.ApiResponse
 import jakarta.security.auth.message.AuthException
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
@@ -31,9 +31,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    fun handleGlobalException(e: Throwable): Result<Unit> {
+    fun handleGlobalException(e: Throwable): ApiResponse<Unit> {
         log.error("Unexpected system exception occurred: ", e)
-        return Result.error(500, e.message ?: "Internal Server Error")
+        return ApiResponse.error(500, e.message ?: "Internal Server Error")
     }
 
     /**
@@ -41,19 +41,19 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleIllegalArgumentException(e: IllegalArgumentException): Result<Unit> {
+    fun handleIllegalArgumentException(e: IllegalArgumentException): ApiResponse<Unit> {
         log.warn("Business parameter validation failed: ${e.message}")
-        return Result.error(400, e.message ?: "Invalid Request Parameter")
+        return ApiResponse.error(400, e.message ?: "Invalid Request Parameter")
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleValidationException(e: MethodArgumentNotValidException): Result<Unit> {
+    fun handleValidationException(e: MethodArgumentNotValidException): ApiResponse<Unit> {
         val errorDetails = e.bindingResult.fieldErrors.joinToString("; ") {
             "${it.field}: ${it.defaultMessage}"
         }
         log.warn("Validation failed: $errorDetails")
-        return Result.error(400, errorDetails)
+        return ApiResponse.error(400, errorDetails)
     }
 
     /**
@@ -61,9 +61,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): Result<Unit> {
+    fun handleHttpMessageNotReadableException(e: HttpMessageNotReadableException): ApiResponse<Unit> {
         log.warn("JSON read error: ${e.message}")
-        return Result.error(400, "Invalid JSON format or parameter type")
+        return ApiResponse.error(400, "Invalid JSON format or parameter type")
     }
 
     /**
@@ -71,10 +71,10 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(ServletRequestBindingException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleRequestBindingException(e: ServletRequestBindingException): Result<Unit> {
+    fun handleRequestBindingException(e: ServletRequestBindingException): ApiResponse<Unit> {
         val detailMessage = e.message ?: "Missing required request parameters"
         log.warn("Request binding failed: $detailMessage")
-        return Result.error(400, detailMessage)
+        return ApiResponse.error(400, detailMessage)
     }
 
     /**
@@ -82,9 +82,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(NoResourceFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    fun handleNoResourceFoundException(e: NoResourceFoundException): Result<Unit> {
+    fun handleNoResourceFoundException(e: NoResourceFoundException): ApiResponse<Unit> {
         log.warn("Endpoint not found: {} {}", e.httpMethod, e.resourcePath)
-        return Result.error(404, "Endpoint not found: ${e.resourcePath}")
+        return ApiResponse.error(404, "Endpoint not found: ${e.resourcePath}")
     }
 
     /**
@@ -92,9 +92,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(NoHandlerFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    fun handleNoHandlerFoundException(e: NoHandlerFoundException): Result<Unit> {
+    fun handleNoHandlerFoundException(e: NoHandlerFoundException): ApiResponse<Unit> {
         log.warn("Endpoint not found: {} {}", e.httpMethod, e.requestURL)
-        return Result.error(404, "Endpoint not found: ${e.requestURL}")
+        return ApiResponse.error(404, "Endpoint not found: ${e.requestURL}")
     }
 
     /**
@@ -102,9 +102,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
-    fun handleMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): Result<Unit> {
+    fun handleMethodNotSupportedException(e: HttpRequestMethodNotSupportedException): ApiResponse<Unit> {
         log.warn("HTTP method not supported: {}", e.method)
-        return Result.error(405, "Method '${e.method}' not allowed")
+        return ApiResponse.error(405, "Method '${e.method}' not allowed")
     }
 
     /**
@@ -112,9 +112,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMediaTypeNotSupportedException::class)
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-    fun handleMediaTypeNotSupportedException(e: HttpMediaTypeNotSupportedException): Result<Unit> {
+    fun handleMediaTypeNotSupportedException(e: HttpMediaTypeNotSupportedException): ApiResponse<Unit> {
         log.warn("Media type not supported: {}", e.contentType)
-        return Result.error(415, "Unsupported Media Type: ${e.contentType}")
+        return ApiResponse.error(415, "Unsupported Media Type: ${e.contentType}")
     }
 
     /**
@@ -122,9 +122,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataIntegrityViolationException::class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): Result<Unit> {
+    fun handleDataIntegrityViolationException(e: DataIntegrityViolationException): ApiResponse<Unit> {
         log.error("Database integrity violation: ", e)
-        return Result.error(409, "Data conflict or database constraint violation")
+        return ApiResponse.error(409, "Data conflict or database constraint violation")
     }
 
     /**
@@ -133,9 +133,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(AuthException::class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun handleAuthException(e: AuthException): Result<Unit> {
+    fun handleAuthException(e: AuthException): ApiResponse<Unit> {
         log.warn("Authentication failed: ${e.message}")
-        return Result.error(401, e.message ?: "Unauthorized")
+        return ApiResponse.error(401, e.message ?: "Unauthorized")
     }
 
     /**
@@ -144,9 +144,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(AuthenticationException::class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    fun handleSpringSecurityAuthException(e: AuthenticationException): Result<Unit> {
+    fun handleSpringSecurityAuthException(e: AuthenticationException): ApiResponse<Unit> {
         log.warn("Security authentication failed: ${e.message}")
-        return Result.error(401, e.message ?: "Authentication Failed")
+        return ApiResponse.error(401, e.message ?: "Authentication Failed")
     }
 
     /**
@@ -155,9 +155,9 @@ class GlobalExceptionHandler {
      */
     @ExceptionHandler(AccessDeniedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    fun handleAccessDeniedException(e: Exception): Result<Unit> {
+    fun handleAccessDeniedException(e: Exception): ApiResponse<Unit> {
         log.warn("Access denied: ${e.message}")
-        return Result.error(403, "Forbidden: You do not have permission to access this resource")
+        return ApiResponse.error(403, "Forbidden: You do not have permission to access this resource")
     }
 
     /**
@@ -165,13 +165,13 @@ class GlobalExceptionHandler {
      * 注释：如果在 PermissionInterceptor 或 Service 中手动抛出了包含特定关键字的 RuntimeException，在此统一捕获
      */
     @ExceptionHandler(IllegalStateException::class, RuntimeException::class)
-    fun handleBusinessForbiddenException(e: Exception): Result<Unit> {
+    fun handleBusinessForbiddenException(e: Exception): ApiResponse<Unit> {
         val message = e.message
         if (message?.contains("Forbidden", ignoreCase = true) == true ||
             message?.contains("Access denied", ignoreCase = true) == true
         ) {
             log.warn("Business permission check failed: $message")
-            return Result.error(403, "Forbidden: You do not have permission to access this resource")
+            return ApiResponse.error(403, "Forbidden: You do not have permission to access this resource")
         }
         throw e
     }

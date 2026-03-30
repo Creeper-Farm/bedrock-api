@@ -2,9 +2,11 @@ package com.creeperfarm.bedrockuser.controller
 
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
-import com.creeperfarm.bedrockcommon.model.dto.Result
-import com.creeperfarm.bedrockuser.model.dto.RoleResponse
-import com.creeperfarm.bedrockuser.model.dto.UserResponse
+import com.creeperfarm.bedrockcommon.model.response.ApiResponse
+import com.creeperfarm.bedrockuser.model.request.RolePermissionUpdateRequest
+import com.creeperfarm.bedrockuser.model.request.UserRoleUpdateRequest
+import com.creeperfarm.bedrockuser.model.response.RoleResponse
+import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.service.RoleService
 import com.creeperfarm.bedrockuser.service.UserService
 import jakarta.validation.Valid
@@ -32,14 +34,14 @@ class RoleController(
     @Authenticated
     @RequiresPermissions(["system:role:list"])
     @GetMapping("/list")
-    fun getRoleList(
+    fun listRoles(
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) name: String?
-    ): Result<List<RoleResponse>> {
+    ): ApiResponse<List<RoleResponse>> {
         logger.info("REST request to get all roles. Page: $page, Size: $size, Name: $name")
-        val roles = roleService.getRoleList(page, size, name)
-        return Result.success(roles)
+        val roles = roleService.listRoles(page, size, name)
+        return ApiResponse.success(roles)
     }
 
     /**
@@ -48,10 +50,10 @@ class RoleController(
     @Authenticated
     @RequiresPermissions(["system:role:list"])
     @GetMapping("/user/{userId:\\d+}")
-    fun getRoleListByUserId(@PathVariable userId: Long): Result<List<RoleResponse>> {
+    fun listRolesByUserId(@PathVariable userId: Long): ApiResponse<List<RoleResponse>> {
         logger.info("REST request to get roles by userId: {}", userId)
-        val roles = roleService.getRoleListByUserId(userId)
-        return Result.success(roles)
+        val roles = roleService.listRolesByUserId(userId)
+        return ApiResponse.success(roles)
     }
 
     /**
@@ -60,14 +62,14 @@ class RoleController(
     @Authenticated
     @RequiresPermissions(["system:user:list"])
     @GetMapping("/{roleId:\\d+}/users")
-    fun getUserListByRoleId(
+    fun listUsersByRoleId(
         @PathVariable roleId: Long,
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): Result<List<UserResponse>> {
+    ): ApiResponse<List<UserResponse>> {
         logger.info("REST request to get users by roleId: {}. Page: {}, Size: {}", roleId, page, size)
-        val users = userService.getUserListByRoleId(page, size, roleId)
-        return Result.success(users)
+        val users = userService.listUsersByRoleId(page, size, roleId)
+        return ApiResponse.success(users)
     }
 
     /**
@@ -78,11 +80,11 @@ class RoleController(
     @PutMapping("/user/{userId:\\d+}")
     fun updateUserRoles(
         @PathVariable userId: Long,
-        @RequestBody @Valid roleIds: List<Long>
-    ): Result<Boolean> {
+        @RequestBody @Valid request: UserRoleUpdateRequest
+    ): ApiResponse<Boolean> {
         logger.info("REST request to update roles for userId: {}", userId)
-        val isUpdate = roleService.updateUserRoles(userId, roleIds)
-        return Result.success(isUpdate)
+        val isUpdate = roleService.updateUserRoleAssignments(userId, request.roleIds)
+        return ApiResponse.success(isUpdate)
     }
 
     /**
@@ -91,13 +93,13 @@ class RoleController(
     @Authenticated
     @RequiresPermissions(["system:role:permission"])
     @PutMapping("{roleId:\\d+}/permissions")
-    fun assignPermissions(
+    fun updateRolePermissions(
         @PathVariable roleId: Long,
-        @RequestBody permissionIds: List<Long>
-    ): Result<Boolean> {
+        @RequestBody @Valid request: RolePermissionUpdateRequest
+    ): ApiResponse<Boolean> {
         logger.info("REST request to update permissions for roleId: {}", roleId)
-        val isUpdated = roleService.updateRolePermissions(roleId, permissionIds)
-        return Result.success(isUpdated)
+        val isUpdated = roleService.updateRolePermissionAssignments(roleId, request.permissionIds)
+        return ApiResponse.success(isUpdated)
     }
 
 }

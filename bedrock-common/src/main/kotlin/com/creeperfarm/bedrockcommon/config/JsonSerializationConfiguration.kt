@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter
 import java.util.TimeZone
 
 @Configuration(proxyBeanMethods = false)
-class JacksonConfig {
+class JsonSerializationConfiguration {
 
     @Bean
     fun jsonMapperBuilderCustomizer(): JsonMapperBuilderCustomizer {
@@ -35,6 +35,6 @@ class JacksonConfig {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(JacksonConfig::class.java)
+        private val log = LoggerFactory.getLogger(JsonSerializationConfiguration::class.java)
     }
 }

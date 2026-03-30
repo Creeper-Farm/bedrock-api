@@ -1,6 +1,6 @@
 package com.creeperfarm.bedrockuser.repository
 
-import com.creeperfarm.bedrockuser.model.dto.DeviceLoginRecord
+import com.creeperfarm.bedrockuser.model.response.UserDeviceLoginRecord
 import com.creeperfarm.bedrockuser.model.entity.UserDeviceTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
@@ -15,10 +15,10 @@ import java.time.LocalDateTime
 class UserDeviceRepository {
 
     // 判断该用户-设备是否已有登录记录
-    fun findByUserIdAndDeviceId(userId: Long, deviceId: String): DeviceLoginRecord? {
+    fun findByUserIdAndDeviceId(userId: Long, deviceId: String): UserDeviceLoginRecord? {
         return UserDeviceTable.selectAll()
             .where { activeDeviceCondition(userId, deviceId) }
-            .map { it.toDeviceLoginRecord() }
+            .map { it.toUserDeviceLoginRecord() }
             .singleOrNull()
     }
 
@@ -66,7 +66,7 @@ class UserDeviceRepository {
         }
     }
 
-    private fun ResultRow.toDeviceLoginRecord() = DeviceLoginRecord(
+    private fun ResultRow.toUserDeviceLoginRecord() = UserDeviceLoginRecord(
         userId = this[UserDeviceTable.userId].value,
         deviceId = this[UserDeviceTable.deviceId],
         loginCount = this[UserDeviceTable.loginCount]

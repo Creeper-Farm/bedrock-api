@@ -1,12 +1,9 @@
-package com.creeperfarm.bedrockuser.model.dto
+package com.creeperfarm.bedrockuser.model.request
 
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
-/**
- * 用户注册请求参数
- */
-data class UserRegister(
+data class UserRegistrationRequest(
     @field:NotBlank(message = "Username cannot be blank")
     @field:Size(min = 4, max = 20, message = "Username must be between 4 and 20 characters")
     val username: String,

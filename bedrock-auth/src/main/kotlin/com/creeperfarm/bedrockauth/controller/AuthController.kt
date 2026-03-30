@@ -1,15 +1,18 @@
 package com.creeperfarm.bedrockauth.controller
 
-import com.creeperfarm.bedrockauth.model.dto.TokenRefresh
-import com.creeperfarm.bedrockauth.model.dto.TokenResponse
+import com.creeperfarm.bedrockauth.model.request.LoginRequest
+import com.creeperfarm.bedrockauth.model.request.RefreshTokenRequest
+import com.creeperfarm.bedrockauth.model.response.TokenResponse
 import com.creeperfarm.bedrockauth.service.AuthService
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
-import com.creeperfarm.bedrockuser.model.dto.UserRegister
+import com.creeperfarm.bedrockcommon.model.response.ApiResponse
 import jakarta.security.auth.message.AuthException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
-import org.springframework.web.bind.annotation.*
-import com.creeperfarm.bedrockcommon.model.dto.Result
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,9 +25,9 @@ class AuthController(private val authService: AuthService) {
      * 注释：验证通过后返回 AccessToken 和 RefreshToken
      */
     @PostMapping("/login")
-    fun login(@RequestBody req: UserRegister, request: HttpServletRequest): Result<TokenResponse> {
-        log.info("REST request to login user: {}", req.username)
-        return Result.success(authService.login(req, request))
+    fun login(@RequestBody request: LoginRequest, servletRequest: HttpServletRequest): ApiResponse<TokenResponse> {
+        log.info("REST request to login user: {}", request.username)
+        return ApiResponse.success(authService.login(request, servletRequest))
     }
 
     /**
@@ -33,9 +36,9 @@ class AuthController(private val authService: AuthService) {
      */
     @Authenticated
     @PostMapping("/refresh")
-    fun refresh(@RequestBody token: TokenRefresh): Result<TokenResponse> {
+    fun refresh(@RequestBody request: RefreshTokenRequest): ApiResponse<TokenResponse> {
         log.info("REST request to refresh token")
-        return Result.success(authService.refreshToken(token.refreshToken))
+        return ApiResponse.success(authService.refreshToken(request.refreshToken))
     }
 
     /**
@@ -44,11 +47,11 @@ class AuthController(private val authService: AuthService) {
      */
     @Authenticated
     @PostMapping("/logout")
-    fun logout(request: HttpServletRequest): Result<Unit> {
+    fun logout(request: HttpServletRequest): ApiResponse<Unit> {
         val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
             ?: throw AuthException("Missing authenticated user")
         log.info("REST request to logout userId: {}", userId)
         authService.logout(userId)
-        return Result.success(null)
+        return ApiResponse.success(null)
     }
 }

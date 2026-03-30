@@ -1,6 +1,6 @@
 package com.creeperfarm.bedrockuser.service
 
-import com.creeperfarm.bedrockuser.model.dto.RoleResponse
+import com.creeperfarm.bedrockuser.model.response.RoleResponse
 import com.creeperfarm.bedrockuser.repository.PermissionRepository
 import com.creeperfarm.bedrockuser.repository.RoleRepository
 import com.creeperfarm.bedrockuser.repository.UserRepository
@@ -20,26 +20,26 @@ class RoleService(
      * 分页获取角色列表
      */
     @Transactional(readOnly = true)
-    fun getRoleList(page: Int, size: Int, name: String?): List<RoleResponse> {
+    fun listRoles(page: Int, size: Int, name: String?): List<RoleResponse> {
         logger.info("Fetching role list with pagination - Page: $page, Size $size")
         val offset = ((page - 1) * size).toLong()
-        return roleRepository.findRoles(offset, size, name)
+        return roleRepository.findPagedRoles(offset, size, name)
     }
 
     /**
      * 获取用户角色列表
      */
     @Transactional(readOnly = true)
-    fun getRoleListByUserId(userId: Long): List<RoleResponse> {
+    fun listRolesByUserId(userId: Long): List<RoleResponse> {
         logger.info("Fetching role list with userId: $userId")
-        return roleRepository.findByUserId(userId)
+        return roleRepository.findRolesByUserId(userId)
     }
 
     /**
      * 更新用户角色绑定关系
      */
     @Transactional
-    fun updateUserRoles(userId: Long, roleIds: List<Long>): Boolean {
+    fun updateUserRoleAssignments(userId: Long, roleIds: List<Long>): Boolean {
         logger.info("Updating roles for userId: {}", userId)
 
         if (userRepository.findByUserId(userId) == null) {
@@ -58,14 +58,14 @@ class RoleService(
             throw RuntimeException("Some roles do not exist")
         }
 
-        return roleRepository.updateUserRoles(userId, distinctRoleIds)
+        return roleRepository.replaceUserRoles(userId, distinctRoleIds)
     }
 
     /**
      * 为角色重新绑定权限列表
      */
     @Transactional
-    fun updateRolePermissions(roleId: Long, permissionIds: List<Long>): Boolean {
+    fun updateRolePermissionAssignments(roleId: Long, permissionIds: List<Long>): Boolean {
         logger.info("Updating permissions for roleId: {}", roleId)
 
         if (roleRepository.countActiveRolesByIds(listOf(roleId)) != 1L) {
@@ -84,7 +84,7 @@ class RoleService(
             throw RuntimeException("Some permissions do not exist")
         }
 
-        return roleRepository.updateRolePermissions(roleId, distinctPermissionIds)
+        return roleRepository.replaceRolePermissions(roleId, distinctPermissionIds)
     }
 
 }

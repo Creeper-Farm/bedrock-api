@@ -1,8 +1,8 @@
 package com.creeperfarm.bedrockuser.service
 
-import com.creeperfarm.bedrockuser.model.dto.UserRegister
-import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
-import com.creeperfarm.bedrockuser.model.dto.UserResponse
+import com.creeperfarm.bedrockuser.model.request.UserProfileUpdateRequest
+import com.creeperfarm.bedrockuser.model.request.UserRegistrationRequest
+import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -22,22 +22,22 @@ class UserService(
      * 使用写事务，发生异常时会自动回滚
      */
     @Transactional
-    fun registerUser(req: UserRegister): Long {
-        log.info("Attempting to register new user: {}", req.username)
+    fun register(request: UserRegistrationRequest): Long {
+        log.info("Attempting to register new user: {}", request.username)
 
-        val existingUser = userRepository.findByUsername(req.username)
+        val existingUser = userRepository.findByUsername(request.username)
         if (existingUser != null) {
-            log.warn("Registration failed: Username '{}' is already taken", req.username)
+            log.warn("Registration failed: Username '{}' is already taken", request.username)
             throw RuntimeException("Username already exists")
         }
 
-        val encodedPassword = requireNotNull(passwordEncoder.encode(req.password)) {
+        val encodedPassword = requireNotNull(passwordEncoder.encode(request.password)) {
             "Encoded password must not be null"
         }
 
-        val userId = userRepository.createUser(req, encodedPassword)
+        val userId = userRepository.createUser(request, encodedPassword)
 
-        log.info("User '{}' registered successfully with ID: {}", req.username, userId)
+        log.info("User '{}' registered successfully with ID: {}", request.username, userId)
         return userId
     }
 
@@ -46,7 +46,7 @@ class UserService(
      * 使用只读事务 (readOnly = true)，优化数据库性能
      */
     @Transactional(readOnly = true)
-    fun getUserProfile(userId: Long): UserResponse {
+    fun getUserById(userId: Long): UserResponse {
         log.info("Fetching profile for userId: {}", userId)
         return userRepository.findByUserId(userId) ?: run {
             log.warn("Profile fetch failed: User '{}' not found or deleted", userId)
@@ -71,12 +71,12 @@ class UserService(
      * 更新当前用户资料
      */
     @Transactional
-    fun updateUserProfile(userId: Long, req: UserProfileUpdate): UserResponse {
-        if (req.email == null && req.phone == null && req.avatar == null && req.bio == null) {
+    fun updateProfile(userId: Long, request: UserProfileUpdateRequest): UserResponse {
+        if (request.email == null && request.phone == null && request.avatar == null && request.bio == null) {
             throw IllegalArgumentException("At least one field must be provided")
         }
 
-        val affectedRows = userRepository.updateUserProfile(userId, req)
+        val affectedRows = userRepository.updateUserProfile(userId, request)
         if (affectedRows == 0) {
             log.warn("Update profile failed: User '{}' not found or deleted", userId)
             throw RuntimeException("User not found or already deleted")
@@ -89,21 +89,21 @@ class UserService(
      * 分页获取用户列表
      */
     @Transactional(readOnly = true)
-    fun getUserList(page: Int, size: Int, username: String?): List<UserResponse> {
+    fun listUsers(page: Int, size: Int, username: String?): List<UserResponse> {
         log.info("Fetching user list with pagination - Page: {}, Size: {}", page, size)
 
         // 计算偏移量
         val offset = ((page - 1) * size).toLong()
 
         // 从 repository 获取数据
-        return userRepository.findAllActiveUsers(offset, size, username)
+        return userRepository.findUsers(offset, size, username)
     }
 
     /**
      * 分页获取属于某个角色的用户列表
      */
     @Transactional(readOnly = true)
-    fun getUserListByRoleId(page: Int, size: Int, roleId: Long): List<UserResponse> {
+    fun listUsersByRoleId(page: Int, size: Int, roleId: Long): List<UserResponse> {
         log.info("Fetching user list by roleId with pagination - Page: {}, Size: {}", page, size)
         val offset = ((page - 1) * size).toLong()
         return userRepository.findUsersByRoleId(offset, size, roleId)

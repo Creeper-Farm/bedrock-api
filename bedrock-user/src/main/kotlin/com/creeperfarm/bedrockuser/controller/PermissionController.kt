@@ -2,11 +2,11 @@ package com.creeperfarm.bedrockuser.controller
 
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
-import com.creeperfarm.bedrockcommon.model.dto.PageResult
-import com.creeperfarm.bedrockcommon.model.dto.Result
-import com.creeperfarm.bedrockuser.model.dto.PermissionCreate
-import com.creeperfarm.bedrockuser.model.dto.PermissionResponse
-import com.creeperfarm.bedrockuser.model.dto.PermissionUpdate
+import com.creeperfarm.bedrockcommon.model.response.ApiResponse
+import com.creeperfarm.bedrockcommon.model.response.PageResponse
+import com.creeperfarm.bedrockuser.model.request.PermissionCreateRequest
+import com.creeperfarm.bedrockuser.model.request.PermissionUpdateRequest
+import com.creeperfarm.bedrockuser.model.response.PermissionResponse
 import com.creeperfarm.bedrockuser.service.PermissionService
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
@@ -39,11 +39,11 @@ class PermissionController(
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) name: String?,
-    ): Result<PageResult<PermissionResponse>> {
+    ): ApiResponse<PageResponse<PermissionResponse>> {
         logger.info("REST request to get permissions page: $page, pageSize: $size, name: $name, Search: $name")
-        val permissions = permissionService.getPermissions(page, size, name)
-        val total = permissionService.getSearchPermissionTotal(name)
-        return Result.success(PageResult.of(total, permissions, page, size))
+        val permissions = permissionService.listPermissions(page, size, name)
+        val total = permissionService.countPermissions(name)
+        return ApiResponse.success(PageResponse.of(total, permissions, page, size))
     }
 
     /**
@@ -54,10 +54,10 @@ class PermissionController(
     @RequiresPermissions(["system:permission:create"])
     @PostMapping("/create")
     fun createPermission(
-        @RequestBody @Valid request: PermissionCreate
-    ): Result<Long> {
+        @RequestBody @Valid request: PermissionCreateRequest
+    ): ApiResponse<Long> {
         val permissionId = permissionService.createPermission(request.name, request.code, request.type)
-        return Result.success(permissionId)
+        return ApiResponse.success(permissionId)
     }
 
     /**
@@ -68,10 +68,10 @@ class PermissionController(
     @RequiresPermissions(["system:permission:update"])
     @PutMapping("/update")
     fun updatePermission(
-        @RequestBody @Valid request: PermissionUpdate
-    ): Result<Boolean> {
+        @RequestBody @Valid request: PermissionUpdateRequest
+    ): ApiResponse<Boolean> {
         val isUpdate = permissionService.updatePermission(request.id, request.name, request.code, request.type)
-        return Result.success(isUpdate)
+        return ApiResponse.success(isUpdate)
     }
 
     /**
@@ -83,10 +83,10 @@ class PermissionController(
     @DeleteMapping("/delete/{permissionId:\\d+}")
     fun deletePermission(
         @PathVariable permissionId: Long
-    ): Result<Boolean> {
+    ): ApiResponse<Boolean> {
         logger.info("REST request to delete permission: {}", permissionId)
         val isDeleted = permissionService.deletePermission(permissionId)
-        return Result.success(isDeleted)
+        return ApiResponse.success(isDeleted)
     }
 
 }

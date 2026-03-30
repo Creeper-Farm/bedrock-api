@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component
 
 @Component
 @ConfigurationProperties(prefix = "auth.jwt")
-class AuthJwtProperties {
+class JwtTokenProperties {
     lateinit var secret: String
     var accessTokenExpSeconds: Long = 3600
     var refreshTokenExpSeconds: Long = 86400L * 7

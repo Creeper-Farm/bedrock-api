@@ -5,18 +5,14 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration(proxyBeanMethods = false)
-class WebConfig : WebMvcConfigurer {
+class CorsWebMvcConfiguration : WebMvcConfigurer {
 
-    /**
-     * 解决跨域问题
-     */
     override fun addCorsMappings(registry: CorsRegistry) {
-        registry.addMapping("/**") // 所有接口
-            .allowedOriginPatterns("*") // 允许任何来源
+        registry.addMapping("/**")
+            .allowedOriginPatterns("*")
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true)
             .maxAge(3600)
     }
-
 }

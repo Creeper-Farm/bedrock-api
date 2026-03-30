@@ -1,11 +1,10 @@
 package com.creeperfarm.bedrockuser.repository
 
-import com.creeperfarm.bedrockuser.model.dto.RoleResponse
+import com.creeperfarm.bedrockuser.model.response.RoleResponse
 import com.creeperfarm.bedrockuser.model.entity.RolePermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
@@ -24,7 +23,7 @@ class RoleRepository {
     /**
      * 查询用户角色列表
      */
-    fun findByUserId(userId: Long): List<RoleResponse> {
+    fun findRolesByUserId(userId: Long): List<RoleResponse> {
         return (UserRoleTable innerJoin RoleTable)
             .selectAll()
             .where {
@@ -36,7 +35,7 @@ class RoleRepository {
     /**
      * 分页查询角色列表
      */
-    fun findRoles(offset: Long, limit: Int, name: String?): List<RoleResponse> {
+    fun findPagedRoles(offset: Long, limit: Int, name: String?): List<RoleResponse> {
         val query = RoleTable.selectAll().where { RoleTable.deleted eq false }
 
         if (name != null) {
@@ -63,7 +62,7 @@ class RoleRepository {
      * 批量为用户分配角色 (多对多)
      * 注释：先删除用户现有的所有角色关联，再批量插入新的关联
      */
-    fun updateUserRoles(userId: Long, roleIds: List<Long>): Boolean {
+    fun replaceUserRoles(userId: Long, roleIds: List<Long>): Boolean {
         UserRoleTable.deleteWhere { UserRoleTable.userId eq userId }
         if (roleIds.isEmpty()) return true
         val insertedRows = UserRoleTable.batchInsert(roleIds) { roleId ->
@@ -76,7 +75,7 @@ class RoleRepository {
     /**
      * 批量更新角色权限关联
      */
-    fun updateRolePermissions(roleId: Long, permissionIds: List<Long>): Boolean {
+    fun replaceRolePermissions(roleId: Long, permissionIds: List<Long>): Boolean {
         RolePermissionTable.deleteWhere { RolePermissionTable.roleId eq roleId }
         if (permissionIds.isEmpty()) return true
 
@@ -120,7 +119,7 @@ class RoleRepository {
     }
 
     /**
-     * 将数据库行为映射为 DTO 的扩展函数
+     * 将数据库结果映射为角色响应模型
      */
     private fun ResultRow.toRoleResponse() = RoleResponse(
         id = this[RoleTable.id].value,

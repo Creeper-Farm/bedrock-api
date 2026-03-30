@@ -12,7 +12,7 @@ import javax.sql.DataSource
 
 @Configuration(proxyBeanMethods = false)
 @EnableTransactionManagement
-class ExposedConfig(
+class ExposedDatabaseConfiguration(
     @Value("\${spring.exposed.show-sql:false}")
     private val showSql: Boolean
 ) {
@@ -32,7 +32,7 @@ class ExposedConfig(
 
     @Bean
     @Primary
-    fun exposedSpringTransactionAttributeSource(): ExposedSpringTransactionAttributeSource {
+    fun exposedTransactionAttributeSource(): ExposedSpringTransactionAttributeSource {
         return ExposedSpringTransactionAttributeSource()
     }
 }

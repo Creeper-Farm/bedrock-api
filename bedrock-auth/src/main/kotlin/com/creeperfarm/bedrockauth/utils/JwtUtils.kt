@@ -1,6 +1,6 @@
 package com.creeperfarm.bedrockauth.utils
 
-import com.creeperfarm.bedrockauth.config.AuthJwtProperties
+import com.creeperfarm.bedrockauth.config.JwtTokenProperties
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
@@ -9,7 +9,7 @@ import java.util.*
 
 @Component
 class JwtUtils(
-    private val jwtProperties: AuthJwtProperties
+    private val jwtProperties: JwtTokenProperties
 ) {
     private val algorithm by lazy { Algorithm.HMAC256(jwtProperties.secret) }
 

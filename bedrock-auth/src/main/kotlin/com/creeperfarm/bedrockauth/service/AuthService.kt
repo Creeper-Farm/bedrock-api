@@ -1,11 +1,11 @@
 package com.creeperfarm.bedrockauth.service
 
-import com.creeperfarm.bedrockauth.model.dto.TokenResponse
+import com.creeperfarm.bedrockauth.model.request.LoginRequest
+import com.creeperfarm.bedrockauth.model.response.TokenResponse
 import com.creeperfarm.bedrockauth.utils.JwtUtils
-import com.creeperfarm.bedrockuser.service.UserDeviceService
-import com.creeperfarm.bedrockuser.model.dto.UserRegister
 import com.creeperfarm.bedrockuser.repository.UserRepository
 import com.creeperfarm.bedrockuser.service.PermissionService
+import com.creeperfarm.bedrockuser.service.UserDeviceService
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -29,16 +29,17 @@ class AuthService(
      * 用户登录逻辑
      */
     @Transactional
-    fun login(req: UserRegister, request: HttpServletRequest): TokenResponse {
-        log.info("User login attempt: {}", req.username)
+    fun login(request: LoginRequest, servletRequest: HttpServletRequest): TokenResponse {
+        log.info("User login attempt: {}", request.username)
 
         // 获取用户实体和加密后的密码
-        val user = userRepository.findByUsername(req.username) ?: throw IllegalArgumentException("Invalid username or password")
-        val encodedPassword = userRepository.getPassword(req.username) ?: throw IllegalArgumentException("Database integrity error: Password missing")
+        val user = userRepository.findByUsername(request.username) ?: throw IllegalArgumentException("Invalid username or password")
+        val encodedPassword = userRepository.getPassword(request.username)
+            ?: throw IllegalArgumentException("Database integrity error: Password missing")
 
         // 校验密码是否正确
-        if (!passwordEncoder.matches(req.password, encodedPassword)) {
-            log.warn("Login failed: Password mismatch for user '{}'", req.username)
+        if (!passwordEncoder.matches(request.password, encodedPassword)) {
+            log.warn("Login failed: Password mismatch for user '{}'", request.username)
             throw IllegalArgumentException("Invalid username or password")
         }
 
@@ -46,8 +47,8 @@ class AuthService(
         userRepository.updateLastLoginTime(user.id)
         userDeviceService.recordLoginDevice(
             userId = user.id,
-            request = request,
-            ipAddress = resolveClientIp(request)
+            request = servletRequest,
+            ipAddress = resolveClientIp(servletRequest)
         )
 
         // 查询用户拥有的所有权限代码 (如: ["user:add", "system:config"])

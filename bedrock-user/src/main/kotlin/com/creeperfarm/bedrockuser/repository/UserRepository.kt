@@ -1,8 +1,8 @@
 package com.creeperfarm.bedrockuser.repository
 
-import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
-import com.creeperfarm.bedrockuser.model.dto.UserRegister
-import com.creeperfarm.bedrockuser.model.dto.UserResponse
+import com.creeperfarm.bedrockuser.model.request.UserProfileUpdateRequest
+import com.creeperfarm.bedrockuser.model.request.UserRegistrationRequest
+import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.model.entity.UserRoleTable
 import com.creeperfarm.bedrockuser.model.entity.UserTable
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -43,9 +43,9 @@ class UserRepository {
     /**
      * 创建用户
      */
-    fun createUser(req: UserRegister, encodedPassword: String): Long {
+    fun createUser(request: UserRegistrationRequest, encodedPassword: String): Long {
         val insertedId = UserTable.insertAndGetId {
-            it[username] = req.username
+            it[username] = request.username
             it[password] = encodedPassword
             // 显式设置初始时间
             it[createTime] = LocalDateTime.now()
@@ -87,12 +87,12 @@ class UserRepository {
     /**
      * 更新用户资料
      */
-    fun updateUserProfile(userId: Long, req: UserProfileUpdate): Int {
+    fun updateUserProfile(userId: Long, request: UserProfileUpdateRequest): Int {
         return UserTable.update({ (UserTable.id eq userId) and (UserTable.deleted eq false) }) {
-            req.email?.let { email -> it[UserTable.email] = email }
-            req.phone?.let { phone -> it[UserTable.phone] = phone }
-            req.avatar?.let { avatar -> it[UserTable.avatar] = avatar }
-            req.bio?.let { bio -> it[UserTable.bio] = bio }
+            request.email?.let { email -> it[UserTable.email] = email }
+            request.phone?.let { phone -> it[UserTable.phone] = phone }
+            request.avatar?.let { avatar -> it[UserTable.avatar] = avatar }
+            request.bio?.let { bio -> it[UserTable.bio] = bio }
             it[updateTime] = LocalDateTime.now()
         }
     }
@@ -100,7 +100,7 @@ class UserRepository {
     /**
      * 分页查询活跃用户
      */
-    fun findAllActiveUsers(offset: Long, limit: Int, username: String?): List<UserResponse> {
+    fun findUsers(offset: Long, limit: Int, username: String?): List<UserResponse> {
         val query = UserTable.selectAll().where { UserTable.deleted eq false }
 
         // 动态添加用户名搜索条件
@@ -126,8 +126,7 @@ class UserRepository {
     }
 
     /**
-     * 将 ResultRow 映射为 UserResponse DTO
-     * 建议设为私有，仅供内部使用
+     * 将 ResultRow 映射为用户响应模型
      */
     private fun ResultRow.toUserResponse() = UserResponse(
         id = this[UserTable.id].value,

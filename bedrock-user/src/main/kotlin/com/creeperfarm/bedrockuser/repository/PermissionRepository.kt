@@ -1,6 +1,6 @@
 package com.creeperfarm.bedrockuser.repository
 
-import com.creeperfarm.bedrockuser.model.dto.PermissionResponse
+import com.creeperfarm.bedrockuser.model.response.PermissionResponse
 import com.creeperfarm.bedrockuser.model.entity.PermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RolePermissionTable
 import com.creeperfarm.bedrockuser.model.entity.RoleTable
@@ -11,7 +11,12 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.jdbc.*
+import org.jetbrains.exposed.v1.jdbc.andWhere
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -20,7 +25,7 @@ class PermissionRepository {
     /**
      * 查询用户权限 (去重)
      */
-    fun findByUserId(userId: Long): List<PermissionResponse> {
+    fun findPermissionsByUserId(userId: Long): List<PermissionResponse> {
         return (UserRoleTable innerJoin RoleTable
                 innerJoin RolePermissionTable
                 innerJoin PermissionTable)
@@ -34,7 +39,7 @@ class PermissionRepository {
     /**
      * 分页查询权限
      */
-    fun findPermissionsPaged(offset: Long, limit: Int, name: String?): List<PermissionResponse> {
+    fun findPagedPermissions(offset: Long, limit: Int, name: String?): List<PermissionResponse> {
         val query = PermissionTable.selectAll()
 
         if (!name.isNullOrBlank()) {
@@ -118,7 +123,7 @@ class PermissionRepository {
     }
 
     /**
-     * 将数据库行为映射为 DTO 的扩展函数
+     * 将数据库结果映射为权限响应模型
      */
     private fun ResultRow.toPermissionResponse() = PermissionResponse(
         id = this[PermissionTable.id].value,

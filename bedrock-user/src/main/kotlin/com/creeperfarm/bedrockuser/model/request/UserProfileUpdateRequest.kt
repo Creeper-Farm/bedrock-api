@@ -1,9 +1,9 @@
-package com.creeperfarm.bedrockuser.model.dto
+package com.creeperfarm.bedrockuser.model.request
 
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Size
 
-data class UserProfileUpdate(
+data class UserProfileUpdateRequest(
     @field:Email(message = "Email format is invalid")
     @field:Size(max = 100, message = "Email length cannot exceed 100")
     val email: String? = null,

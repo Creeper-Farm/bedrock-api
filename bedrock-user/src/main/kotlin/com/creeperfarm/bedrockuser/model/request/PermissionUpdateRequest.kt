@@ -1,13 +1,12 @@
-package com.creeperfarm.bedrockuser.model.dto
+package com.creeperfarm.bedrockuser.model.request
 
 import com.creeperfarm.bedrockuser.model.enums.PermissionType
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
-/**
- * 创建权限请求参数
- */
-data class PermissionCreate(
+data class PermissionUpdateRequest(
+    val id: Long,
+
     @field:NotBlank(message = "Name cannot be blank")
     @field:Size(min = 4, max = 20, message = "Name must be between 4 and 20 characters")
     val name: String,

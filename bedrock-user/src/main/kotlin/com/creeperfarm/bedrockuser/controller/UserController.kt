@@ -2,11 +2,11 @@ package com.creeperfarm.bedrockuser.controller
 
 import com.creeperfarm.bedrockcommon.annotation.Authenticated
 import com.creeperfarm.bedrockcommon.annotation.RequiresPermissions
-import com.creeperfarm.bedrockuser.model.dto.UserRegister
-import com.creeperfarm.bedrockuser.model.dto.UserProfileUpdate
-import com.creeperfarm.bedrockuser.model.dto.UserResponse
+import com.creeperfarm.bedrockcommon.model.response.ApiResponse
+import com.creeperfarm.bedrockuser.model.request.UserProfileUpdateRequest
+import com.creeperfarm.bedrockuser.model.request.UserRegistrationRequest
+import com.creeperfarm.bedrockuser.model.response.UserResponse
 import com.creeperfarm.bedrockuser.service.UserService
-import com.creeperfarm.bedrockcommon.model.dto.Result
 import jakarta.security.auth.message.AuthException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
@@ -21,13 +21,13 @@ class UserController(private val userService: UserService) {
 
     /**
      * 用户注册接口
-     * 注释：接收 UserRegister DTO，返回新创建的用户 ID
+     * 注释：接收注册请求，返回新创建的用户 ID
      */
     @PostMapping("/register")
-    fun register(@RequestBody @Valid req: UserRegister): Result<Long> {
-        log.info("REST request to register user: {}", req.username)
-        val userId = userService.registerUser(req)
-        return Result.success(userId)
+    fun register(@RequestBody @Valid request: UserRegistrationRequest): ApiResponse<Long> {
+        log.info("REST request to register user: {}", request.username)
+        val userId = userService.register(request)
+        return ApiResponse.success(userId)
     }
 
     /**
@@ -36,10 +36,10 @@ class UserController(private val userService: UserService) {
      */
     @Authenticated
     @GetMapping("/{userId:\\d+}")
-    fun getProfile(@PathVariable userId: Long): Result<UserResponse> {
+    fun getUserById(@PathVariable userId: Long): ApiResponse<UserResponse> {
         log.info("REST request to get user profile: {}", userId)
-        val profile = userService.getUserProfile(userId)
-        return Result.success(profile)
+        val profile = userService.getUserById(userId)
+        return ApiResponse.success(profile)
     }
 
     /**
@@ -47,12 +47,12 @@ class UserController(private val userService: UserService) {
      */
     @Authenticated
     @GetMapping("/profile")
-    fun getSelfProfile(request: HttpServletRequest): Result<UserResponse> {
+    fun getCurrentUserProfile(request: HttpServletRequest): ApiResponse<UserResponse> {
         val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
             ?: throw AuthException("Missing authenticated user")
         log.info("REST request to get user profile: $userId")
-        val profile = userService.getUserProfile(userId)
-        return Result.success(profile)
+        val profile = userService.getUserById(userId)
+        return ApiResponse.success(profile)
     }
 
     /**
@@ -60,12 +60,12 @@ class UserController(private val userService: UserService) {
      */
     @Authenticated
     @DeleteMapping("/account")
-    fun deleteAccount(request: HttpServletRequest): Result<Unit> {
+    fun deleteAccount(request: HttpServletRequest): ApiResponse<Unit> {
         val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
             ?: throw AuthException("Missing authenticated user")
         log.info("REST request to soft delete account, userId: {}", userId)
         userService.deleteAccount(userId)
-        return Result.success(null)
+        return ApiResponse.success(null)
     }
 
     /**
@@ -75,12 +75,12 @@ class UserController(private val userService: UserService) {
     @PutMapping("/profile")
     fun updateProfile(
         request: HttpServletRequest,
-        @RequestBody @Valid req: UserProfileUpdate
-    ): Result<UserResponse> {
+        @RequestBody @Valid updateRequest: UserProfileUpdateRequest
+    ): ApiResponse<UserResponse> {
         val userId = request.getAttribute("userId")?.toString()?.toLongOrNull()
             ?: throw AuthException("Missing authenticated user")
         log.info("REST request to update profile, userId: {}", userId)
-        return Result.success(userService.updateUserProfile(userId, req))
+        return ApiResponse.success(userService.updateProfile(userId, updateRequest))
     }
 
     /**
@@ -94,9 +94,9 @@ class UserController(private val userService: UserService) {
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(required = false) username: String?
-    ): Result<List<UserResponse>> {
+    ): ApiResponse<List<UserResponse>> {
         log.info("REST request to get user list. Page: {}, Size: {}, Search: {}", page, size, username)
-        val users = userService.getUserList(page, size, username)
-        return Result.success(users)
+        val users = userService.listUsers(page, size, username)
+        return ApiResponse.success(users)
     }
 }
